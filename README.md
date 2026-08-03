@@ -109,6 +109,18 @@ This vision stack is decoupled from the GPS/ESP32/Nav2 navigation core, so it ca
 - [ ] Port to Pi 4, verify FPS
 - [ ] Fuse with GPS-waypoint steering once nav core is ready
 
+Future Work — Rest of the Autonomous RC Car
+
+This repo is only the camera/vision slice of a larger autonomous car project. The rest of the system, roughly in build order:
+
+Waypoint following — GPS (NEO-6M/V2) + IMU (BNO055) based navigation, handled by an ESP32 alongside motor control. First milestone for the overall car: drive a set of GPS waypoints autonomously.
+Obstacle avoidance — RPLidar on the Pi, fused with the camera's obstacle (pin) detection from this repo to trigger avoidance maneuvers.
+Lane following — integrate this repo's lane-keeping module so it can override/blend with waypoint-following steering when lane markings are present.
+Sign recognition — integrate this repo's stop sign detection into the full driving loop (decelerate/stop/resume behavior tied to actual motor control, not just detection).
+Sensor fusion / system integration — ESP32 (motors, GPS, IMU) ↔ Pi (LiDAR, camera) communication, merging/prioritizing steering commands from GPS-waypoint-following, obstacle avoidance, and lane keeping into one control loop.
+Encoder — not yet on the car; needs a mounting position before it can be added for better odometry.
+Hardware migration — once the RC car proof-of-concept validates the approach, port the stack to the final competition hardware/platform.
+
 ## License
 
 All rights reserved.
