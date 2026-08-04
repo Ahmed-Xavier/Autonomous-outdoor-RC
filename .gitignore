@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+*.pt
+build/
+install/
+log/
+.vscode/
+*.blob
