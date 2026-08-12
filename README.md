@@ -3,6 +3,7 @@
 Camera-based perception stack for an autonomous RC car prototype, built ahead of an autonomous entry to the **Shell Eco-marathon**. This is the proof-of-concept phase — if the approach works on the RC car, the stack moves to better hardware.
 helpful repos: https://github.com/ros-navigation/navigation2/tree/main/nav2_waypoint_follower
  and https://docs.nav2.org/tutorials/docs/navigation2_with_gps.html
+ and https://github.com/proknowdiy/RDK-X5-Autonomous-Vehicle
 > Part of a larger autonomous car project (waypoint following → obstacle avoidance → lane following → sign recognition). This repo covers the **vision** piece only: lane keeping, stop line / finish line detection, and stop sign detection.
 
 ## Status
