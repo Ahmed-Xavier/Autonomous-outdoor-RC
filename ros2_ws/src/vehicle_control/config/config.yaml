@@ -1,0 +1,8 @@
+# Vehicle control configuration
+#
+# TODO:
+# - Define command priority levels.
+# - Configure maximum speed and steering limits.
+# - Define emergency stop behavior.
+# - Configure command timeout values.
+# - Define ESP32 control topics and parameters.

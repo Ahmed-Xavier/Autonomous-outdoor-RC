@@ -1,0 +1,8 @@
+# Autonomy manager configuration
+#
+# TODO:
+# - Define autonomy states.
+# - Configure behavior priorities.
+# - Define safety thresholds and timeout values.
+# - Configure system startup and shutdown behavior.
+# - Define emergency stop policies.

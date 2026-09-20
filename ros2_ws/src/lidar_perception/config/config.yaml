@@ -1,0 +1,8 @@
+# LiDAR perception configuration
+#
+# TODO:
+# - Define LiDAR topic and frame ID.
+# - Define obstacle detection distance thresholds.
+# - Define vehicle safety margins.
+# - Define obstacle filtering parameters.
+# - Define processing frequency.

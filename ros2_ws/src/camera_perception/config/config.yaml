@@ -1,0 +1,9 @@
+# Camera perception configuration
+#
+# TODO:
+# - Define camera device identifier.
+# - Define image resolution and FPS.
+# - Define camera frame ID.
+# - Define lane detection parameters.
+# - Define stop sign detection parameters.
+# - Define processing rates.

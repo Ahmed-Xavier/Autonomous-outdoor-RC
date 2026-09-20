@@ -1,0 +1,7 @@
+# Vehicle bringup configuration
+#
+# TODO:
+# - Define which components should be launched.
+# - Configure launch parameters.
+# - Define simulation versus real-hardware mode.
+# - Configure logging and startup behavior.

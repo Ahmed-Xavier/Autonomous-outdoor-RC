@@ -1,0 +1,9 @@
+# Localization configuration
+#
+# TODO:
+# - Define GPS topic and frame.
+# - Define IMU topic and frame.
+# - Define wheel odometry topic.
+# - Configure sensor fusion parameters.
+# - Define coordinate frames.
+# - Configure filtering and update rates.

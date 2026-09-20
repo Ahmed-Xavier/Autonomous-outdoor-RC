@@ -1,0 +1,5 @@
+<!-- TODO:
+     - Define the vehicle_bringup ROS 2 package.
+     - Add package metadata.
+     - Declare launch and package dependencies.
+-->

@@ -1,0 +1,9 @@
+# ESP32 bridge configuration
+#
+# TODO:
+# - Define communication transport.
+# - Configure serial port or network settings.
+# - Define communication baud rate or network parameters.
+# - Configure message rates and timeouts.
+# - Define ESP32 sensor and actuator interfaces.
+# - Configure communication-loss safety behavior.

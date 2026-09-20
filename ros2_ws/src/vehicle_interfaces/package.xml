@@ -1,0 +1,5 @@
+<!-- TODO:
+     - Define the vehicle_interfaces ROS 2 package.
+     - Add rosidl dependencies.
+     - Declare message, service, and action generation requirements.
+-->
