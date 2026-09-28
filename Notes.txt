@@ -1,0 +1,23 @@
+This file is for Ahmed the owner:
+
+always source before running anything:
+source /opt/ros/jazzy/setup.bash
+
+to run micro ros agent:
+ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
+
+motor command:(no need to source)
+ros2 topic pub -r 10 /esp32/motor_cmd std_msgs/msg/Int16 "{data: 100}"
+
+servo command:(no need to source)
+ros2 topic pub --once /esp32/servo_cmd std_msgs/msg/Int16 "{data: 50}"
+
+to start map server:
+ros2 run nav2_map_server map_server --ros-args -p yaml_filename:=$HOME/map.yaml
+
+to activate it:
+ros2 run nav2_util lifecycle_bringup map_server
+
+to start foxglove bridge:
+ros2 launch foxglove_bridge foxglove_bridge_launch.xml
+
