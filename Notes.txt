@@ -1,23 +1,130 @@
-This file is for Ahmed the owner:
+This file is for Ahmed the owner.
 
-always source before running anything:
+# ROS 2 Environment
+
+Always source before running ROS 2 commands:
+
 source /opt/ros/jazzy/setup.bash
 
-to run micro ros agent:
+# micro-ROS
+
+Start the micro-ROS agent on the Raspberry Pi:
+
 ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
 
-motor command:(no need to source)
+The ESP32 currently connects to the agent over Wi-Fi.
+
+## Current ESP32 Topics
+
+Encoder:
+
+ros2 topic echo /esp32/encoder
+
+Check encoder publishing rate:
+
+ros2 topic hz /esp32/encoder
+
+Current target rate: approximately 20 Hz.
+
+Motor command:
+
 ros2 topic pub -r 10 /esp32/motor_cmd std_msgs/msg/Int16 "{data: 100}"
 
-servo command:(no need to source)
+Stop motor:
+
+ros2 topic pub --once /esp32/motor_cmd std_msgs/msg/Int16 "{data: 0}"
+
+Servo command:
+
 ros2 topic pub --once /esp32/servo_cmd std_msgs/msg/Int16 "{data: 50}"
 
-to start map server:
+Current servo calibration:
+
+30 = maximum RIGHT
+50 = CENTER
+70 = maximum LEFT
+
+# Hardware Pinout
+
+## JGA25-370 motor + encoder cable
+
+Yellow = Encoder A -> ESP32 GPIO 33
+White = Encoder B -> ESP32 GPIO 32
+Blue = Encoder VCC -> 5 V
+Green = Encoder GND -> GND
+Black = Motor negative -> GND / motor supply negative
+Red = Motor positive -> +12 V
+
+## L298N motor driver
+
+IN1 -> ESP32 GPIO 26
+IN2 -> ESP32 GPIO 27
+ENA/PWM -> ESP32 GPIO 25
+
+## Steering servo
+
+Signal -> ESP32 GPIO 14
+
+# Map / Navigation
+
+Start map server:
+
 ros2 run nav2_map_server map_server --ros-args -p yaml_filename:=$HOME/map.yaml
 
-to activate it:
+Activate it:
+
 ros2 run nav2_util lifecycle_bringup map_server
 
-to start foxglove bridge:
+# Foxglove
+
+Start the Foxglove bridge:
+
 ros2 launch foxglove_bridge foxglove_bridge_launch.xml
 
+Foxglove has been tested for map visualization, including a Google Earth screenshot as a development/test map source.
+
+# Hardware
+
+Main computer:
+- Raspberry Pi 4 Model B
+- Ubuntu 24.04
+- ROS 2 Jazzy
+
+Low-level controller:
+- ESP32
+
+Motor:
+- JGA25-370
+- 12 V motor supply
+
+Motor driver:
+- L298N
+
+GPS:
+- GT-U7
+
+IMU:
+- BNO055
+
+Camera:
+- Hikvision USB camera
+
+# Current Development Status
+
+Working/tested:
+- ESP32 Wi-Fi micro-ROS connection
+- L298N motor control
+- Steering servo control
+- JGA25-370 encoder acquisition
+- Encoder publishing at approximately 20 Hz
+- ROS 2 topic communication
+- Foxglove visualization
+
+In progress:
+- ESP32 ROS 2 bridge
+- BNO055 integration
+- GT-U7 integration
+- Camera perception
+- LiDAR integration
+- Localization and sensor fusion
+- Autonomous navigation
