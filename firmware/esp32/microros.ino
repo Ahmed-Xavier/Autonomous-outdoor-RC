@@ -1,6 +1,9 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <ESP32Servo.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BNO055.h>
 
 #include <micro_ros_arduino.h>
 #include <rcl/rcl.h>
@@ -10,6 +13,7 @@
 #include <rmw_microros/rmw_microros.h>
 #include <std_msgs/msg/int16.h>
 #include <std_msgs/msg/int32.h>
+#include <sensor_msgs/msg/imu.h>
 
 // ============================================================
 // NETWORK
@@ -41,6 +45,7 @@ const int SERVO_MAX    = 70;   // max LEFT
 const int MOTOR_MIN_PWM = 100; // minimum PWM that moves the car under load
 const unsigned long CMD_TIMEOUT_MS = 500;  // failsafe
 const unsigned long ENCODER_PERIOD_MS = 50; // 20 Hz
+const unsigned long IMU_PERIOD_MS = 20;     // 50 Hz
 
 // Dedicated LEDC channel for the motor (away from the servo)
 const int MOTOR_PWM_CH   = 4;
@@ -62,6 +67,9 @@ const int MOTOR_PWM_RES  = 8;
 // GLOBALS
 // ============================================================
 Servo servo;
+Adafruit_BNO055 bno(55, 0x28, &Wire);
+bool bnoOk = false;
+
 volatile long encoderCount = 0;
 int currentMotorPWM = 0;
 unsigned long lastMotorCmdMs = 0;
@@ -74,10 +82,12 @@ rclc_executor_t executor;
 rcl_subscription_t motor_sub;
 rcl_subscription_t servo_sub;
 rcl_publisher_t encoder_pub;
+rcl_publisher_t imu_pub;
 
 std_msgs__msg__Int16 motor_msg;
 std_msgs__msg__Int16 servo_msg;
 std_msgs__msg__Int32 encoder_msg;
+sensor_msgs__msg__Imu imu_msg;
 
 enum AgentState { WAITING_AGENT, AGENT_AVAILABLE, AGENT_CONNECTED, AGENT_DISCONNECTED };
 AgentState agentState = WAITING_AGENT;
@@ -107,6 +117,33 @@ void publishEncoder()
 
     encoder_msg.data = (int32_t)count;
     rcl_publish(&encoder_pub, &encoder_msg, NULL);
+}
+
+// ============================================================
+// IMU
+// ============================================================
+void publishImu()
+{
+    if (!bnoOk) return;
+
+    imu::Quaternion q = bno.getQuat();
+    imu::Vector<3> gyro  = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);   // deg/s (check your lib)
+    imu::Vector<3> accel = bno.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL); // m/s^2
+
+    imu_msg.orientation.w = q.w();
+    imu_msg.orientation.x = q.x();
+    imu_msg.orientation.y = q.y();
+    imu_msg.orientation.z = q.z();
+
+    imu_msg.angular_velocity.x = gyro.x() * DEG_TO_RAD;
+    imu_msg.angular_velocity.y = gyro.y() * DEG_TO_RAD;
+    imu_msg.angular_velocity.z = gyro.z() * DEG_TO_RAD;
+
+    imu_msg.linear_acceleration.x = accel.x();
+    imu_msg.linear_acceleration.y = accel.y();
+    imu_msg.linear_acceleration.z = accel.z();
+
+    rcl_publish(&imu_pub, &imu_msg, NULL);
 }
 
 // ============================================================
@@ -191,6 +228,9 @@ bool createEntities()
     if (rclc_publisher_init_default(&encoder_pub, &node,
             ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32), "/esp32/encoder") != RCL_RET_OK) return false;
 
+    if (rclc_publisher_init_default(&imu_pub, &node,
+            ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/esp32/imu") != RCL_RET_OK) return false;
+
     // 2 handles: two subscriptions, no timer
     if (rclc_executor_init(&executor, &support.context, 2, &allocator) != RCL_RET_OK) return false;
     if (rclc_executor_add_subscription(&executor, &motor_sub, &motor_msg, &motorCallback, ON_NEW_DATA) != RCL_RET_OK) return false;
@@ -207,6 +247,7 @@ void destroyEntities()
     rcl_subscription_fini(&motor_sub, &node);
     rcl_subscription_fini(&servo_sub, &node);
     rcl_publisher_fini(&encoder_pub, &node);
+    rcl_publisher_fini(&imu_pub, &node);
     rclc_executor_fini(&executor);
     rcl_node_fini(&node);
     rclc_support_fini(&support);
@@ -236,12 +277,22 @@ void setup()
     pinMode(ENCODER_B, INPUT);
     attachInterrupt(digitalPinToInterrupt(ENCODER_A), encoderISR, CHANGE);
 
+    // IMU
+    Wire.begin(21, 22);
+    bnoOk = bno.begin();
+    if (bnoOk)
+    {
+        delay(1000);
+        bno.setExtCrystalUse(true);
+    }
+    // Mark orientation/velocity/accel covariance as "unknown" (first element = -1)
+    imu_msg.orientation_covariance[0] = -1;
+    imu_msg.angular_velocity_covariance[0] = -1;
+    imu_msg.linear_acceleration_covariance[0] = -1;
+
     // WiFi transport to the micro-ROS agent
     set_microros_wifi_transports((char *)WIFI_SSID, (char *)WIFI_PASS, (char *)AGENT_IP, AGENT_PORT);
     WiFi.setSleep(false);   // lower latency
-
-    Serial.print("WiFi OK, IP: ");
-    Serial.println(WiFi.localIP());
 
     agentState = WAITING_AGENT;
 }
@@ -261,6 +312,7 @@ void loop()
     {
         case WAITING_AGENT:
             EXECUTE_EVERY_N_MS(500,
+                Serial.println("connecting...");
                 agentState = (RMW_RET_OK == rmw_uros_ping_agent(100, 1)) ? AGENT_AVAILABLE : WAITING_AGENT;);
             break;
 
@@ -279,8 +331,7 @@ void loop()
 
         case AGENT_CONNECTED:
         {
-            static unsigned long lastPing = 0, lastPub = 0, lastRep = 0;
-            static unsigned long pubs = 0, loops = 0, maxSpin = 0;
+            static unsigned long lastPing = 0, lastPub = 0, lastImuPub = 0;
 
             if (millis() - lastPing >= 1000)
             {
@@ -290,34 +341,24 @@ void loop()
 
             if (agentState == AGENT_CONNECTED)
             {
-                // Encoder published on the ESP32's own clock
                 if (millis() - lastPub >= ENCODER_PERIOD_MS)
                 {
                     lastPub = millis();
                     publishEncoder();
-                    pubs++;
                 }
 
-                // Receive commands (short timeout)
-                unsigned long s0 = micros();
-                rclc_executor_spin_some(&executor, RCL_MS_TO_NS(1));
-                unsigned long sd = micros() - s0;
-                if (sd > maxSpin) maxSpin = sd;
-                loops++;
-            }
+                if (millis() - lastImuPub >= IMU_PERIOD_MS)
+                {
+                    lastImuPub = millis();
+                    publishImu();
+                }
 
-            // Debug line, once per second
-            if (millis() - lastRep >= 1000)
-            {
-                lastRep = millis();
-                Serial.printf("loops/s %lu | pubs/s %lu | max spin %lu us\n", loops, pubs, maxSpin);
-                loops = 0; pubs = 0; maxSpin = 0;
+                rclc_executor_spin_some(&executor, RCL_MS_TO_NS(1));
             }
             break;
         }
 
         case AGENT_DISCONNECTED:
-            Serial.println("micro-ROS agent lost");
             setMotorRaw(0);                 // never keep driving blind
             destroyEntities();
             agentState = WAITING_AGENT;
