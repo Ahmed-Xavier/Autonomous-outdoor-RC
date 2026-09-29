@@ -1,5 +1,25 @@
-<!-- TODO:
-     - Define the vehicle_control ROS 2 package.
-     - Add package metadata.
-     - Declare ROS 2 dependencies.
--->
+<?xml version="1.0"?>
+<package format="3">
+
+  <name>vehicle_control</name>
+  <version>0.0.1</version>
+
+  <description>
+    Vehicle control nodes for the autonomous outdoor RC.
+  </description>
+
+  <maintainer email="ahmed@example.com">Ahmed</maintainer>
+
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <depend>rclpy</depend>
+  <depend>geometry_msgs</depend>
+  <depend>std_msgs</depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+
+</package>
