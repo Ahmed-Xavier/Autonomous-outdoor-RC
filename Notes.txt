@@ -14,6 +14,15 @@ ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
 
 The ESP32 currently connects to the agent over Wi-Fi.
 
+#vehicle launch
+
+ros2 launch vehicle_bringup description.launch.py
+
+#teleop
+
+ros2 run vehicle_control vehicle_controller
+
+
 ## Current ESP32 Topics
 
 Encoder:

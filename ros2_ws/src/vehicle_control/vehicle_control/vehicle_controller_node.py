@@ -121,7 +121,7 @@ class VehicleController(Node):
         angular_z = max(-1.0, min(1.0, angular_z))
 
         servo_cmd = int(
-            self.SERVO_CENTER - angular_z * (
+            self.SERVO_CENTER + angular_z * (
                 self.SERVO_CENTER - self.SERVO_MIN
             )
         )
