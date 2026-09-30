@@ -10,18 +10,10 @@ source /opt/ros/jazzy/setup.bash
 
 Start the micro-ROS agent on the Raspberry Pi:
 
-ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
+ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888 -v4
+(verbose from 0 to 6 depends on the level of debugging)
 
 The ESP32 currently connects to the agent over Wi-Fi.
-
-#vehicle launch
-
-ros2 launch vehicle_bringup description.launch.py
-
-#teleop
-
-ros2 run vehicle_control vehicle_controller
-
 
 ## Current ESP32 Topics
 
@@ -49,30 +41,9 @@ ros2 topic pub --once /esp32/servo_cmd std_msgs/msg/Int16 "{data: 50}"
 
 Current servo calibration:
 
-30 = maximum RIGHT
-50 = CENTER
-70 = maximum LEFT
-
-# Hardware Pinout
-
-## JGA25-370 motor + encoder cable
-
-Yellow = Encoder A -> ESP32 GPIO 33
-White = Encoder B -> ESP32 GPIO 32
-Blue = Encoder VCC -> 5 V
-Green = Encoder GND -> GND
-Black = Motor negative -> GND / motor supply negative
-Red = Motor positive -> +12 V
-
-## L298N motor driver
-
-IN1 -> ESP32 GPIO 26
-IN2 -> ESP32 GPIO 27
-ENA/PWM -> ESP32 GPIO 25
-
-## Steering servo
-
-Signal -> ESP32 GPIO 14
+28 = maximum RIGHT
+48 = CENTER
+68 = maximum LEFT
 
 # Map / Navigation
 
@@ -91,6 +62,14 @@ Start the Foxglove bridge:
 ros2 launch foxglove_bridge foxglove_bridge_launch.xml
 
 Foxglove has been tested for map visualization, including a Google Earth screenshot as a development/test map source.
+
+#vehicle control 
+
+ros2 run vehicle_control vehicle_controller
+
+#vehicle description
+
+ros2 launch vehicle_bringup description.launch.py
 
 # Hardware
 
@@ -117,6 +96,27 @@ IMU:
 
 Camera:
 - Hikvision USB camera
+
+# Hardware Pinout
+
+## JGA25-370 motor + encoder cable
+
+Yellow = Encoder A -> ESP32 GPIO 33
+White = Encoder B -> ESP32 GPIO 32
+Blue = Encoder VCC -> 5 V
+Green = Encoder GND -> GND
+Black = Motor negative -> GND / motor supply negative
+Red = Motor positive -> +12 V
+
+## L298N motor driver
+
+IN1 -> ESP32 GPIO 26
+IN2 -> ESP32 GPIO 27
+ENA/PWM -> ESP32 GPIO 25
+
+## Steering servo
+
+Signal -> ESP32 GPIO 14
 
 # Current Development Status
 

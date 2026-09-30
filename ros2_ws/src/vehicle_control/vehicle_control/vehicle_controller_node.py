@@ -22,9 +22,9 @@ class VehicleController(Node):
     MOTOR_MIN_PWM = 100
     MOTOR_MAX_PWM = 255
 
-    SERVO_MIN = 30
-    SERVO_CENTER = 50
-    SERVO_MAX = 70
+    SERVO_MIN = 28
+    SERVO_CENTER = 48
+    SERVO_MAX = 68
 
     # Safety timeout. The ESP32 itself also has a 500 ms failsafe.
     COMMAND_TIMEOUT = 0.4

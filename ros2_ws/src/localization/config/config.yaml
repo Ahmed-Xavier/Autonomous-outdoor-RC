@@ -1,6 +1,6 @@
 odometry_node:
   ros__parameters:
-    ticks_per_meter: 0.0        # TODO: push the car 1 m and count ticks
+    ticks_per_meter: 6450.0        
     encoder_topic: /esp32/encoder
     speed_variance: 0.05
 
