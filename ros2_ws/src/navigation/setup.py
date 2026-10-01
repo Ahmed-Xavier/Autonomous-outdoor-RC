@@ -22,6 +22,7 @@ setup(
     entry_points={
         'console_scripts': [
             'waypoint_follower = navigation.waypoint_follower_node:main',
+            'click_to_goal = navigation.click_to_goal_node:main',
         ],
     },
 )

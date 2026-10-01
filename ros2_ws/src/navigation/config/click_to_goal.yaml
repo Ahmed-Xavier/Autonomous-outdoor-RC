@@ -1,0 +1,5 @@
+click_to_goal:
+  ros__parameters:
+    clicked_point_topic: /clicked_point
+    goal_topic: /goal_fix
+    to_ll_service: /toLL

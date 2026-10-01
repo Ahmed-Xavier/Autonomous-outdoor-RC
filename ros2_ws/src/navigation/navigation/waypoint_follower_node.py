@@ -2,6 +2,7 @@
 import math
 import rclpy
 from rclpy.node import Node
+from rclpy.parameter import Parameter
 from sensor_msgs.msg import NavSatFix
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
@@ -30,6 +31,8 @@ class WaypointFollower(Node):
         self.last_fix_t = None
         self.create_subscription(NavSatFix, '/fix', self.on_fix, 10)
         self.create_subscription(Odometry, '/odometry/global', self.on_odom, 10)
+        # Goal from Foxglove (Publish panel, sensor_msgs/NavSatFix)
+        self.create_subscription(NavSatFix, '/goal_fix', self.on_goal, 10)
         self.pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.create_timer(self.p('loop_period'), self.loop)
         self.get_logger().info('Waiting for /fix and /odometry/global...')
@@ -43,12 +46,21 @@ class WaypointFollower(Node):
         q = m.pose.pose.orientation
         self.yaw = math.atan2(2*(q.w*q.z + q.x*q.y), 1 - 2*(q.y*q.y + q.z*q.z))
 
+    def on_goal(self, m):
+        self.set_parameters([
+            Parameter('lat', Parameter.Type.DOUBLE, m.latitude),
+            Parameter('lon', Parameter.Type.DOUBLE, m.longitude),
+        ])
+        self.get_logger().info(f'New goal: {m.latitude:.6f}, {m.longitude:.6f}')
+
     def stop(self):
         self.pub.publish(Twist())
 
     def loop(self):
         if self.fix is None or self.yaw is None:
             return
+        if self.p('lat') == 0.0 and self.p('lon') == 0.0:
+            return  # no goal set yet, do not drive toward (0, 0)
         age = (self.get_clock().now() - self.last_fix_t).nanoseconds / 1e9
         if age > self.p('gps_timeout'):
             self.get_logger().warn('GPS fix is old, stopping')
