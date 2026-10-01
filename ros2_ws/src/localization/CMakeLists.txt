@@ -6,4 +6,6 @@ foreach(directory config launch urdf)
     install(DIRECTORY "${directory}" DESTINATION share/${PROJECT_NAME})
   endif()
 endforeach()
+install(PROGRAMS scripts/imu_stamper.py
+  DESTINATION lib/${PROJECT_NAME})
 ament_package()

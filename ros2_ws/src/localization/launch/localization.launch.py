@@ -17,9 +17,11 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('use_gps', default_value='true'),
 
-        ExecuteProcess(
-            cmd=['python3', '/tmp/imu_stamper.py'],
+        Node(
+            package='localization',
+            executable='imu_stamper.py',
             name='imu_stamper',
+            prefix='python3',
             output='screen',
         ),
 
