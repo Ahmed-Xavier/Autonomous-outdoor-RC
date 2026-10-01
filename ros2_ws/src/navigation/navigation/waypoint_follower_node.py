@@ -29,6 +29,7 @@ class WaypointFollower(Node):
         self.fix = None
         self.yaw = None
         self.last_fix_t = None
+        self.arrived = False
         self.create_subscription(NavSatFix, '/fix', self.on_fix, 10)
         self.create_subscription(Odometry, '/odometry/global', self.on_odom, 10)
         # Goal from Foxglove (Publish panel, sensor_msgs/NavSatFix)
@@ -51,6 +52,7 @@ class WaypointFollower(Node):
             Parameter('lat', Parameter.Type.DOUBLE, m.latitude),
             Parameter('lon', Parameter.Type.DOUBLE, m.longitude),
         ])
+        self.arrived = False
         self.get_logger().info(f'New goal: {m.latitude:.6f}, {m.longitude:.6f}')
 
     def stop(self):
@@ -61,6 +63,8 @@ class WaypointFollower(Node):
             return
         if self.p('lat') == 0.0 and self.p('lon') == 0.0:
             return  # no goal set yet, do not drive toward (0, 0)
+        if self.arrived:
+            return
         age = (self.get_clock().now() - self.last_fix_t).nanoseconds / 1e9
         if age > self.p('gps_timeout'):
             self.get_logger().warn('GPS fix is old, stopping')
@@ -71,9 +75,11 @@ class WaypointFollower(Node):
         dE = math.radians(glon - lon) * R * math.cos(math.radians(lat))
         dist = math.hypot(dE, dN)
         if dist < self.p('tol'):
-            self.get_logger().info(f'Arrived (dist {dist:.1f} m)')
-            self.stop()
-            rclpy.shutdown(); return
+            if not self.arrived:
+                self.get_logger().info(f'Arrived (dist {dist:.1f} m)')
+                self.stop()
+                self.arrived = True
+            return
         target = math.atan2(dN, dE)  # 0 = east, counter-clockwise
         yaw = self.yaw + math.radians(self.p('yaw_offset_deg'))
         err = wrap(target - yaw)
