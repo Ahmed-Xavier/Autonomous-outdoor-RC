@@ -89,9 +89,9 @@ The current firmware publishes approximately every 50 ms, giving a nominal rate 
 
 Current firmware limits:
 
-- Minimum: `30`
-- Center: `50`
-- Maximum: `70`
+- Minimum: `28`
+- Center: `48`
+- Maximum: `68`
 
 These values represent the current vehicle's steering calibration and should be treated as calibration parameters rather than universal servo angles.
 

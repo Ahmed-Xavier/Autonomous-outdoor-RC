@@ -51,6 +51,7 @@ def generate_launch_description():
                 ('gps/fix', '/fix'),
                 ('odometry/filtered', 'odometry/global'),
                 ('odometry/gps', '/odometry/gps'),
+                ('toLL', '/navsat_transform/toLL'),
             ],
         ),
     ])
