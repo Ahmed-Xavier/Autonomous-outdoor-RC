@@ -156,7 +156,7 @@
   <joint name="imu_joint" type="fixed">
     <parent link="base_link"/>
     <child link="imu_link"/>
-    <origin xyz="${wheel_base + imu_dx} 0 ${ground_clearance + chassis_height - wheel_radius}" rpy="0 0 0"/>
+    <origin xyz="${wheel_base + imu_dx} 0 ${ground_clearance + chassis_height - wheel_radius}" rpy="0 0 ${-pi/2}"/>
   </joint>
 
   <!-- GPS: position barely matters at this accuracy, so it sits on top of the chassis centre -->

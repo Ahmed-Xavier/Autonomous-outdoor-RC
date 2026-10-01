@@ -20,7 +20,7 @@
 // ============================================================
 #define WIFI_SSID  "oni"
 #define WIFI_PASS  "ahmedsidi"
-#define AGENT_IP   "10.236.95.81"   // Pi's IP on the hotspot
+#define AGENT_IP   "10.108.60.41"   // Pi's IP on the hotspot
 #define AGENT_PORT 8888
 
 // ============================================================
@@ -38,14 +38,28 @@ const int SERVO_PIN = 14;
 // ============================================================
 // LIMITS
 // ============================================================
-const int SERVO_MIN    = 30;   // max RIGHT
-const int SERVO_CENTER = 50;
-const int SERVO_MAX    = 70;   // max LEFT
+const int SERVO_MIN    = 28;   // max RIGHT
+const int SERVO_CENTER = 48;
+const int SERVO_MAX    = 68;   // max LEFT
 
 const int MOTOR_MIN_PWM = 100; // minimum PWM that moves the car under load
 const unsigned long CMD_TIMEOUT_MS = 500;  // failsafe
 const unsigned long ENCODER_PERIOD_MS = 50; // 20 Hz
 const unsigned long IMU_PERIOD_MS = 20;     // 50 Hz
+
+// ============================================================
+// IMU MESSAGE SETTINGS
+// ============================================================
+// frame_id must match the link name in the URDF (imu_joint -> imu_link).
+// robot_localization uses it to rotate the data into the car frame.
+// Must be a static/global buffer: the message only stores a pointer to it.
+static char IMU_FRAME_ID[] = "imu_link";
+
+// Trust given to the IMU by the EKF (variance, smaller = more trust).
+// Start with these values, then tune by watching how noisy the filtered yaw is.
+const double IMU_ORIENT_COV = 0.01;   // rad^2
+const double IMU_GYRO_COV   = 0.01;   // (rad/s)^2
+const double IMU_ACCEL_COV  = 0.1;    // (m/s^2)^2
 
 // Dedicated LEDC channel for the motor (away from the servo)
 const int MOTOR_PWM_CH   = 4;
@@ -122,6 +136,28 @@ void publishEncoder()
 // ============================================================
 // IMU
 // ============================================================
+// Fill the fixed parts of the IMU message once (frame_id + covariances).
+void initImuMsg()
+{
+    imu_msg.header.frame_id.data     = IMU_FRAME_ID;
+    imu_msg.header.frame_id.size     = strlen(IMU_FRAME_ID);
+    imu_msg.header.frame_id.capacity = sizeof(IMU_FRAME_ID);
+
+    // Covariance matrices are 3x3, row-major: diagonal = indices 0, 4, 8
+    for (int i = 0; i < 9; i++)
+    {
+        imu_msg.orientation_covariance[i]         = 0.0;
+        imu_msg.angular_velocity_covariance[i]    = 0.0;
+        imu_msg.linear_acceleration_covariance[i] = 0.0;
+    }
+    for (int i = 0; i < 9; i += 4)
+    {
+        imu_msg.orientation_covariance[i]         = IMU_ORIENT_COV;
+        imu_msg.angular_velocity_covariance[i]    = IMU_GYRO_COV;
+        imu_msg.linear_acceleration_covariance[i] = IMU_ACCEL_COV;
+    }
+}
+
 void publishImu()
 {
     if (!bnoOk) return;
@@ -285,10 +321,9 @@ void setup()
         delay(1000);
         bno.setExtCrystalUse(true);
     }
-    // Mark orientation/velocity/accel covariance as "unknown" (first element = -1)
-    imu_msg.orientation_covariance[0] = -1;
-    imu_msg.angular_velocity_covariance[0] = -1;
-    imu_msg.linear_acceleration_covariance[0] = -1;
+
+    // IMU message: frame_id = "imu_link" + real covariances
+    initImuMsg();
 
     // WiFi transport to the micro-ROS agent
     set_microros_wifi_transports((char *)WIFI_SSID, (char *)WIFI_PASS, (char *)AGENT_IP, AGENT_PORT);

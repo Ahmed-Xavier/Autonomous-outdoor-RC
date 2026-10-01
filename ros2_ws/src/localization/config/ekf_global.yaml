@@ -20,7 +20,7 @@ ekf_map:
                    false, false, false,
                    false, false, false,
                    false, false, false]
-    imu0: /esp32/imu
+    imu0: /imu/data
     imu0_config: [false, false, false,
                   false, false, true,
                   false, false, false,

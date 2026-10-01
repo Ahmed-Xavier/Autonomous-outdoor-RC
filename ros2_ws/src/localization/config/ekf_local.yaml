@@ -14,7 +14,7 @@ ekf_odom:
                    true,  false, false,   # vx vy vz
                    false, false, false,   # vroll vpitch vyaw
                    false, false, false]   # ax ay az
-    imu0: /esp32/imu
+    imu0: /imu/data
     imu0_config: [false, false, false,
                   false, false, true,     # yaw (absolute)
                   false, false, false,
