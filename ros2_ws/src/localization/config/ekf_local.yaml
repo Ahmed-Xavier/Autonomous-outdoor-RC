@@ -1,6 +1,6 @@
 ekf_odom:
   ros__parameters:
-    frequency: 30.0
+    frequency: 10.0
     two_d_mode: true
     publish_tf: true
     map_frame: map
