@@ -1,0 +1,5 @@
+nmea_serial_driver:
+  ros__parameters:
+    port: /dev/ttyACM0
+    baud: 9600
+    frame_id: gps_link

@@ -1,0 +1,10 @@
+navsat_transform:
+  ros__parameters:
+    frequency: 30.0
+    delay: 3.0
+    magnetic_declination_radians: 0.0   # TODO: set for Tunisia (about +3 deg east, check a declination calculator)
+    yaw_offset: 0.0                     # 0 because the IMU yaw is ENU (east = 0)
+    zero_altitude: true
+    publish_filtered_gps: true
+    use_odometry_yaw: false
+    wait_for_datum: false

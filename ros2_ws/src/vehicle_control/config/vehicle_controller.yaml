@@ -1,0 +1,12 @@
+vehicle_controller:
+  ros__parameters:
+    motor_min_pwm: 100
+    motor_max_pwm: 255
+    servo_min: 28
+    servo_center: 48
+    servo_max: 68
+    command_timeout: 0.4
+    linear_deadband: 0.001
+    linear_full_scale: 1.0
+    angular_limit: 1.0
+    control_period: 0.1

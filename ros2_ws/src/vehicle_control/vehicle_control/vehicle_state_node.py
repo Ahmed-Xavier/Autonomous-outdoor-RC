@@ -5,6 +5,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from geometry_msgs.msg import TransformStamped
+from nav_msgs.msg import Odometry
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Int16, Int32
 from tf2_ros import TransformBroadcaster
@@ -12,8 +13,8 @@ from tf2_ros import TransformBroadcaster
 
 class VehicleState(Node):
     """
-    /esp32/servo_cmd + /esp32/encoder  ->  /joint_states + TF odom->base_footprint
-    Dead reckoning with a bicycle model (no IMU yet).
+    Publishes /joint_states and /wheel/odom from /esp32/encoder.
+    The odom->base_footprint TF is optional and off by default; the EKF owns that TF.
     """
 
     def __init__(self):
@@ -31,45 +32,73 @@ class VehicleState(Node):
         self.declare_parameter('steer_rad_per_servo_deg', math.radians(1.0))
         self.declare_parameter('steer_sign', -1.0)
 
-        self.declare_parameter('publish_tf', True)
+        self.declare_parameter('publish_tf', False)
         self.declare_parameter('odom_frame', 'odom')
         self.declare_parameter('base_frame', 'base_footprint')
+        self.declare_parameter('publish_rate', 30.0)
+        self.declare_parameter('straight_turn_epsilon', 1e-6)
+        self.declare_parameter('publish_wheel_odom', True)
+        self.declare_parameter('wheel_odom_topic', '/wheel/odom')
+        self.declare_parameter('vx_variance', 0.01)
+        self.declare_parameter('min_encoder_dt', 0.01)
 
         self.x = 0.0
         self.y = 0.0
         self.yaw = 0.0
         self.delta = 0.0          # steering angle at the centre (rad), + = left
         self.last_ticks = None
+        self.last_encoder_time = None
         self.spin = {'rl': 0.0, 'rr': 0.0, 'fl': 0.0, 'fr': 0.0}
 
         self.tf_broadcaster = TransformBroadcaster(self)
         self.js_pub = self.create_publisher(JointState, 'joint_states', 10)
+        self.wheel_odom_pub = self.create_publisher(
+            Odometry, self.p('wheel_odom_topic'), 10)
 
         self.create_subscription(
             Int32, '/esp32/encoder', self.on_encoder, qos_profile_sensor_data)
         self.create_subscription(
             Int16, '/esp32/servo_cmd', self.on_servo, qos_profile_sensor_data)
 
-        self.create_timer(1.0 / 30.0, self.publish_state)
-        self.get_logger().info('vehicle_state started (placeholder calibration)')
+        self.create_timer(1.0 / self.p('publish_rate'), self.publish_state)
+        self.get_logger().info('vehicle_state started')
 
     def p(self, name):
         return self.get_parameter(name).value
 
     def on_servo(self, msg):
-        # servo below centre = left = positive steering angle
+        # servo above centre = left = positive steering angle (steer_sign = -1 flips the sign of the difference)
         self.delta = (self.p('steer_sign')
                       * (self.p('servo_center') - msg.data)
                       * self.p('steer_rad_per_servo_deg'))
 
     def on_encoder(self, msg):
+        now = self.get_clock().now()
         if self.last_ticks is None:
             self.last_ticks = msg.data
+            self.last_encoder_time = now
+            return
+        elapsed = (now - self.last_encoder_time).nanoseconds / 1e9
+        if elapsed < self.p('min_encoder_dt'):
             return
         d = (self.p('encoder_sign') * (msg.data - self.last_ticks)
              / self.p('ticks_per_meter'))
         self.last_ticks = msg.data
+        self.last_encoder_time = now
         self.integrate(d)
+        if not self.p('publish_wheel_odom') or elapsed <= 0.0:
+            return
+
+        odom = Odometry()
+        odom.header.stamp = now.to_msg()
+        odom.header.frame_id = self.p('odom_frame')
+        odom.child_frame_id = self.p('base_frame')
+        odom.twist.twist.linear.x = d / elapsed
+        odom.twist.covariance = [0.0] * 36
+        odom.twist.covariance[0] = self.p('vx_variance')
+        for index in range(1, 6):
+            odom.twist.covariance[index * 6 + index] = 1e3
+        self.wheel_odom_pub.publish(odom)
 
     def integrate(self, d):
         L = self.p('wheel_base')
@@ -87,7 +116,7 @@ class VehicleState(Node):
         wheels = {'rl': (0.0, tw / 2), 'rr': (0.0, -tw / 2),
                   'fl': (L, tw / 2), 'fr': (L, -tw / 2)}
         for k, (px, py) in wheels.items():
-            if abs(t) < 1e-6:
+            if abs(t) < self.p('straight_turn_epsilon'):
                 dist = d
             else:
                 R = L / t

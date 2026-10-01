@@ -1,0 +1,4 @@
+bringup:
+  ros__parameters:
+    debug: true
+    foxglove_port: 8765

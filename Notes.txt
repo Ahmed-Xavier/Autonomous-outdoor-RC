@@ -1,139 +1,58 @@
-This file is for Ahmed the owner.
+Files that repeat in every package
+package.xml is the ID card: package name, version, and which other packages it needs. ROS reads it to know what to build first.
+CMakeLists.txt (config/launch-only packages) tells the build to copy config/, launch/ and urdf/ to the install folder. If a folder is not listed there, ROS cannot see it after the build.
+setup.py (Python packages) does the same job, and also lists the entry points. An entry point is the line that turns a Python file into a command, so that ros2 run navigation waypoint_follower_node works.
+setup.cfg tells the build where to put the executables.
+resource/<package_name> is an empty marker file. Without it, ROS does not find the package.
+<package>/__init__.py marks the folder as Python code.
+config/*.yaml holds the tunable numbers. One file per node.
+launch/*.launch.py starts nodes and gives them their YAML.
+Root
+README.md: what the project is, and 5 lines to build and run.
+.gitignore: keeps build/ install/ log/ __pycache__/ *.egg-info out of git.
+docs/: architecture.md (layers, topics, TF tree), hardware.md (wiring, pins, dimensions), development-roadmap.md (what comes next).
+firmware/esp32/microros.ino runs on the ESP32, outside ROS 2. It drives the motor, servo and encoder, reads the BNO055, and talks to the Pi through micro-ROS. Its README holds flash steps, libraries and the agent IP.
+Layer 0: definitions
 
-# ROS 2 Environment
+vehicle_description is the body of the car.
 
-Always source before running ROS 2 commands:
+urdf/rc_car.urdf.xacro lists the parts (chassis, wheels, imu_link, gps_link) and where each one sits. The imu_link joint holds the mounting rotation of the IMU. This is the file that tells ROS which way is the front.
+launch/description.launch.py starts robot_state_publisher, which turns the URDF into TF transforms. This is what Foxglove draws.
+Layer 1: sensors
 
-source /opt/ros/jazzy/setup.bash
+vehicle_drivers holds no code of ours, only settings and launches.
 
-# micro-ROS
+config/gps.yaml: serial port, baud rate, frame name, and the covariance scale. This is where we fix "the EKF trusts the GPS too little".
+launch/gps.launch.py starts the GPS driver, which publishes /fix.
+launch/microros_agent.launch.py starts the micro-ROS agent. This is the bridge: once it runs, the ESP32 topics (/esp32/encoder, the IMU) appear on the Pi.
+Layer 2: estimation (where is the car, which way does it face)
 
-Start the micro-ROS agent on the Raspberry Pi:
+localization has no code of ours. It only configures robot_localization.
 
-ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888 -v4
-(verbose from 0 to 6 depends on the level of debugging)
+ekf_local.yaml: the filter in the odom frame. It mixes encoder speed with IMU turning. The output /odometry/local is smooth and never jumps. Think of it as the car's dead-reckoning.
+ekf_global.yaml: the filter in the map frame. It adds GPS, so the position is correct in the world but moves in small steps. The output is /odometry/global.
+navsat.yaml: settings for navsat_transform, which turns latitude/longitude into meters in the map. It also holds the heading settings (yaw_offset, magnetic_declination_radians). This is the right home for your hand-measured offset. The goal is to remove it from the script.
+launch/localization.launch.py starts the two filters and navsat_transform.
+Layer 3: control
 
-The ESP32 currently connects to the agent over Wi-Fi.
+vehicle_control turns a wish ("go 0.5 m/s, turn left") into actuator commands.
 
-## Current ESP32 Topics
+vehicle_controller_node.py reads /cmd_vel and publishes /esp32/motor_cmd and /esp32/servo_cmd. vehicle_controller.yaml holds servo center, steering gain, steer_sign, max speed.
+vehicle_state_node.py does the reverse. It reads the servo command and the encoder, and publishes /joint_states so the wheels and steering move in the URDF. vehicle_state.yaml holds ticks_per_meter, encoder_sign, steer_sign, wheelbase. In the target design this node stops publishing the odom → base_footprint TF, because the EKF owns it. It keeps only the wheel odometry as an input for the EKF.
+launch/vehicle_control.launch.py starts both nodes with their YAML.
+Layer 4: behavior
 
-Encoder:
+navigation decides where to steer.
 
-ros2 topic echo /esp32/encoder
+waypoint_follower_node.py is your goto_waypoint.py. It compares the car's position and heading with the goal, and publishes /cmd_vel. If layer 2 gives a correct absolute heading, the node needs no yaw_offset_deg.
+waypoint_follower.yaml: lat, lon, tol, speed, k_steer, max_steer.
+launch/navigation.launch.py starts the node.
+Layer 5: the main
 
-Check encoder publishing rate:
+vehicle_bringup
 
-ros2 topic hz /esp32/encoder
-
-Current target rate: approximately 20 Hz.
-
-Motor command:
-
-ros2 topic pub -r 10 /esp32/motor_cmd std_msgs/msg/Int16 "{data: 100}"
-
-Stop motor:
-
-ros2 topic pub --once /esp32/motor_cmd std_msgs/msg/Int16 "{data: 0}"
-
-Servo command:
-
-ros2 topic pub --once /esp32/servo_cmd std_msgs/msg/Int16 "{data: 50}"
-
-Current servo calibration:
-
-28 = maximum RIGHT
-48 = CENTER
-68 = maximum LEFT
-
-# Map / Navigation
-
-Start map server:
-
-ros2 run nav2_map_server map_server --ros-args -p yaml_filename:=$HOME/map.yaml
-
-Activate it:
-
-ros2 run nav2_util lifecycle_bringup map_server
-
-# Foxglove
-
-Start the Foxglove bridge:
-
-ros2 launch foxglove_bridge foxglove_bridge_launch.xml
-
-Foxglove has been tested for map visualization, including a Google Earth screenshot as a development/test map source.
-
-#vehicle control 
-
-ros2 run vehicle_control vehicle_controller
-
-#vehicle description
-
-ros2 launch vehicle_bringup description.launch.py
-
-# Hardware
-
-Main computer:
-- Raspberry Pi 4 Model B
-- Ubuntu 24.04
-- ROS 2 Jazzy
-
-Low-level controller:
-- ESP32
-
-Motor:
-- JGA25-370
-- 12 V motor supply
-
-Motor driver:
-- L298N
-
-GPS:
-- GT-U7
-
-IMU:
-- BNO055
-
-Camera:
-- Hikvision USB camera
-
-# Hardware Pinout
-
-## JGA25-370 motor + encoder cable
-
-Yellow = Encoder A -> ESP32 GPIO 33
-White = Encoder B -> ESP32 GPIO 32
-Blue = Encoder VCC -> 5 V
-Green = Encoder GND -> GND
-Black = Motor negative -> GND / motor supply negative
-Red = Motor positive -> +12 V
-
-## L298N motor driver
-
-IN1 -> ESP32 GPIO 26
-IN2 -> ESP32 GPIO 27
-ENA/PWM -> ESP32 GPIO 25
-
-## Steering servo
-
-Signal -> ESP32 GPIO 14
-
-# Current Development Status
-
-Working/tested:
-- ESP32 Wi-Fi micro-ROS connection
-- L298N motor control
-- Steering servo control
-- JGA25-370 encoder acquisition
-- Encoder publishing at approximately 20 Hz
-- ROS 2 topic communication
-- Foxglove visualization
-
-In progress:
-- ESP32 ROS 2 bridge
-- BNO055 integration
-- GT-U7 integration
-- Camera perception
-- LiDAR integration
-- Localization and sensor fusion
-- Autonomous navigation
+bringup.launch.py includes the other launch files in this order: description, drivers, localization, control, navigation.
+indoor.launch.py is the same without GPS and without the global filter. It only runs the local filter. It is your bench test: rotate the car by hand and see the URDF turn in Foxglove.
+How data flows
+ESP32 / GPS  ->  ekf_local / ekf_global  ->  waypoint_follower  ->  vehicle_controller  ->  ESP32
+ (layer 1)           (layer 2)                  (layer 4)              (layer 3)

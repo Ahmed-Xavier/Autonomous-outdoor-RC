@@ -1,0 +1,19 @@
+vehicle_state:
+  ros__parameters:
+    wheel_radius: 0.025
+    wheel_base: 0.185
+    track_width: 0.11
+    ticks_per_meter: 6449.0
+    encoder_sign: 1.0
+    servo_center: 48.0
+    steer_rad_per_servo_deg: 0.017453292519943295
+    steer_sign: -1.0
+    publish_tf: false
+    odom_frame: odom
+    base_frame: base_footprint
+    publish_rate: 30.0
+    straight_turn_epsilon: 0.000001
+    publish_wheel_odom: true
+    wheel_odom_topic: /wheel/odom
+    vx_variance: 0.01
+    min_encoder_dt: 0.01

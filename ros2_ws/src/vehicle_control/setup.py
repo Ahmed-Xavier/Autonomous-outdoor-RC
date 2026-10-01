@@ -1,3 +1,4 @@
+import glob
 from setuptools import setup
 
 package_name = 'vehicle_control'
@@ -15,10 +16,8 @@ setup(
             'share/' + package_name,
             ['package.xml'],
         ),
-        (
-            'share/' + package_name + '/config',
-            ['config/config.yaml'],
-        ),
+        ('share/' + package_name + '/config', glob.glob('config/*.yaml')),
+        ('share/' + package_name + '/launch', glob.glob('launch/*.launch.py')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

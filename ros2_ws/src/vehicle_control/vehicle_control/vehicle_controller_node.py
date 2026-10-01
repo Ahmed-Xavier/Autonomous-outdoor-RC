@@ -19,18 +19,19 @@ class VehicleController(Node):
         /esp32/servo_cmd      std_msgs/Int16
     """
 
-    MOTOR_MIN_PWM = 100
-    MOTOR_MAX_PWM = 255
-
-    SERVO_MIN = 28
-    SERVO_CENTER = 48
-    SERVO_MAX = 68
-
-    # Safety timeout. The ESP32 itself also has a 500 ms failsafe.
-    COMMAND_TIMEOUT = 0.4
-
     def __init__(self):
         super().__init__('vehicle_controller')
+
+        self.declare_parameter('motor_min_pwm', 100)
+        self.declare_parameter('motor_max_pwm', 255)
+        self.declare_parameter('servo_min', 28)
+        self.declare_parameter('servo_center', 48)
+        self.declare_parameter('servo_max', 68)
+        self.declare_parameter('command_timeout', 0.4)
+        self.declare_parameter('linear_deadband', 0.001)
+        self.declare_parameter('linear_full_scale', 1.0)
+        self.declare_parameter('angular_limit', 1.0)
+        self.declare_parameter('control_period', 0.1)
 
         self.motor_pub = self.create_publisher(
             Int16,
@@ -56,16 +57,19 @@ class VehicleController(Node):
         # Publish commands periodically so the ESP32 failsafe
         # does not stop the motor during normal teleoperation.
         self.control_timer = self.create_timer(
-            0.1,
+            self.p('control_period'),
             self.control_loop
         )
 
         self.last_motor_cmd = 0
-        self.last_servo_cmd = self.SERVO_CENTER
+        self.last_servo_cmd = self.p('servo_center')
 
         self.get_logger().info(
             'Vehicle controller started: /cmd_vel -> ESP32'
         )
+
+    def p(self, name):
+        return self.get_parameter(name).value
 
     def cmd_vel_callback(self, msg: Twist):
         """
@@ -79,21 +83,21 @@ class VehicleController(Node):
         # MOTOR
         # ---------------------------------------------------------
         #
-        # Normalize linear velocity from [-1, 1] to [-255, 255].
+        # linear_x is normalized (a fraction of full PWM), not m/s.
         #
         # Anything non-zero must be at least +/-100 because the
         # physical motor needs that PWM to start moving.
         #
 
-        if abs(linear_x) < 0.001:
+        if abs(linear_x) < self.p('linear_deadband'):
             motor_cmd = 0
         else:
             motor_cmd = int(
                 max(
-                    self.MOTOR_MIN_PWM,
+                    self.p('motor_min_pwm'),
                     min(
-                        self.MOTOR_MAX_PWM,
-                        abs(linear_x) * self.MOTOR_MAX_PWM
+                        self.p('motor_max_pwm'),
+                        abs(linear_x) / self.p('linear_full_scale') * self.p('motor_max_pwm')
                     )
                 )
             )
@@ -105,30 +109,24 @@ class VehicleController(Node):
         # STEERING
         # ---------------------------------------------------------
         #
-        # angular.z:
-        #
-        #   -1.0 -> 70? / 30?
-        #    0.0 -> 50
-        #   +1.0 -> opposite side
-        #
-        # ROS convention: positive angular.z = left / CCW.
-        #
-        # We map positive angular.z to servo values below center.
-        # If your physical steering direction is reversed, swap
-        # SERVO_MIN and SERVO_MAX in this mapping.
+        # angular_z is normalized to [-angular_limit, +angular_limit].
+        # The mapping is servo_center + angular_z *
+        # (servo_center - servo_min), clamped to [servo_min, servo_max].
+        # Positive angular_z (left) gives a servo value above center on this car.
         #
 
-        angular_z = max(-1.0, min(1.0, angular_z))
+        angular_limit = self.p('angular_limit')
+        angular_z = max(-angular_limit, min(angular_limit, angular_z))
 
         servo_cmd = int(
-            self.SERVO_CENTER + angular_z * (
-                self.SERVO_CENTER - self.SERVO_MIN
+            self.p('servo_center') + angular_z * (
+                self.p('servo_center') - self.p('servo_min')
             )
         )
 
         servo_cmd = max(
-            self.SERVO_MIN,
-            min(self.SERVO_MAX, servo_cmd)
+            self.p('servo_min'),
+            min(self.p('servo_max'), servo_cmd)
         )
 
         self.last_motor_cmd = motor_cmd
@@ -149,9 +147,9 @@ class VehicleController(Node):
             now - self.last_cmd_time
         ).nanoseconds / 1e9
 
-        if elapsed > self.COMMAND_TIMEOUT:
+        if elapsed > self.p('command_timeout'):
             motor_cmd = 0
-            servo_cmd = self.SERVO_CENTER
+            servo_cmd = self.p('servo_center')
         else:
             motor_cmd = self.last_motor_cmd
             servo_cmd = self.last_servo_cmd
@@ -182,7 +180,7 @@ def main(args=None):
         node.motor_pub.publish(stop_motor)
 
         center_servo = Int16()
-        center_servo.data = node.SERVO_CENTER
+        center_servo.data = node.p('servo_center')
         node.servo_pub.publish(center_servo)
 
         node.destroy_node()
