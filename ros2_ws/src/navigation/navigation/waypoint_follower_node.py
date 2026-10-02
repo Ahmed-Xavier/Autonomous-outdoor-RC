@@ -5,7 +5,7 @@ from rclpy.node import Node
 from rclpy.parameter import Parameter
 from sensor_msgs.msg import NavSatFix
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, vector3
 
 R = 6371000.0
 
@@ -35,6 +35,7 @@ class WaypointFollower(Node):
         # Goal from Foxglove (Publish panel, sensor_msgs/NavSatFix)
         self.create_subscription(NavSatFix, '/goal_fix', self.on_goal, 10)
         self.pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.error_pub = self.create_publisher(Vector3, '/waypoint_error', 10)
         self.create_timer(self.p('loop_period'), self.loop)
         self.get_logger().info('Waiting for /fix and /odometry/global...')
 
@@ -86,6 +87,11 @@ class WaypointFollower(Node):
         steer = self.p('steer_sign') * self.p('k_steer') * err
         ms = self.p('max_steer')
         steer = max(-ms, min(ms, steer))
+        error_msg = Vector3()
+        error_msg.x = dist
+        error_msg.y = math.degrees(err)
+        error_msg.z = steer
+        self.error_pub.publish(error_msg)
         t = Twist()
         t.linear.x = self.p('speed')
         t.angular.z = steer

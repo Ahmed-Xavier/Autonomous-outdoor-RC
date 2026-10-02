@@ -64,6 +64,7 @@ The current firmware provides:
 - `/esp32/motor_cmd`
 - `/esp32/servo_cmd`
 - `/esp32/encoder`
+- `/esp32/imu
 
 The encoder is currently published at approximately 20 Hz.
 
