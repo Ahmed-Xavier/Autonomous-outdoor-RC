@@ -5,7 +5,7 @@ from rclpy.node import Node
 from rclpy.parameter import Parameter
 from sensor_msgs.msg import NavSatFix
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Twist, vector3
+from geometry_msgs.msg import Twist, Vector3
 
 R = 6371000.0
 
