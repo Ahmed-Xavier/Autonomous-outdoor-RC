@@ -112,6 +112,10 @@ ESP32 control pins are documented in `docs/hardware.md` and match the current fi
 
 ## Repository Structure
 
+The external Slamtec ROS 2 driver is kept as a separate ignored package under
+`ros2_ws/src/sllidar_ros2`. Fetch it with `vcs import ros2_ws/src <
+ros2_ws/sllidar.repos` (install `vcstool` first).
+
 - `firmware/esp32/` — ESP32 low-level firmware
 - `ros2_ws/` — ROS 2 Jazzy workspace
 - `docs/` — architecture and hardware documentation

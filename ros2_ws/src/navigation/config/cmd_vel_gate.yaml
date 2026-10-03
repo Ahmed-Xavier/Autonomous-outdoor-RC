@@ -1,0 +1,15 @@
+cmd_vel_gate:
+  ros__parameters:
+    stop_distance_m: 0.35
+    min_points: 2
+    timeout_s: 0.5
+    # From vehicle_description/urdf/rc_car.urdf.xacro: wheel_base=0.185,
+    # track_width=0.11, chassis_length=0.30, chassis_width=0.08 (assumed),
+    # chassis_x_offset=0.0925 (assumed). front/rear are chassis ends in base_link;
+    # half_width is chassis_width/2.
+    front_x: 0.2425
+    rear_x: -0.0575
+    half_width: 0.04
+    input_topic: /cmd_vel_nav
+    output_topic: /cmd_vel
+    scan_topic: /scan

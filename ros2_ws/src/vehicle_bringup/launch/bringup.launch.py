@@ -31,10 +31,14 @@ def _launch_setup(context, *args, **kwargs):
     actions = [
         _include('vehicle_description', 'description.launch.py'),
         _include('vehicle_drivers', 'gps.launch.py'),
+        _include('vehicle_drivers', 'lidar.launch.py'),
         _include('vehicle_drivers', 'microros_agent.launch.py'),
         _include('localization', 'localization.launch.py'),
         _include('vehicle_control', 'vehicle_control.launch.py'),
-        _include('navigation', 'navigation.launch.py'),
+        _include('navigation', 'navigation.launch.py', arguments={
+            'use_lidar_gate': LaunchConfiguration('use_lidar_gate'),
+            'use_local_planner': LaunchConfiguration('use_local_planner'),
+        }),
         Node(package='navigation', executable='click_to_goal',
              name='click_to_goal', parameters=[click_to_goal_config]),
     ]
@@ -47,5 +51,9 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('debug', default_value='',
                               description='Override bringup.yaml debug setting'),
+        DeclareLaunchArgument('use_lidar_gate', default_value='true',
+                              description='Enable the /scan command safety gate'),
+        DeclareLaunchArgument('use_local_planner', default_value='false',
+                              description='Enable local obstacle steering before the gate'),
         OpaqueFunction(function=_launch_setup),
     ])

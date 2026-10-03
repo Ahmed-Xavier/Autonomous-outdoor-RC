@@ -11,5 +11,6 @@
   <exec_depend>ament_index_python</exec_depend>
   <exec_depend>nmea_navsat_driver</exec_depend>
   <exec_depend>micro_ros_agent</exec_depend>
+  <exec_depend>sllidar_ros2</exec_depend>
   <export><build_type>ament_cmake</build_type></export>
 </package>

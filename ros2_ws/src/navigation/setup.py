@@ -1,4 +1,4 @@
-import glob
+﻿import glob
 from setuptools import setup
 
 package_name = 'navigation'
@@ -23,6 +23,9 @@ setup(
         'console_scripts': [
             'waypoint_follower = navigation.waypoint_follower_node:main',
             'click_to_goal = navigation.click_to_goal_node:main',
+            'waypoint_manager = navigation.waypoint_manager_node:main',
+            'cmd_vel_gate = navigation.cmd_vel_gate_node:main',
+            'local_planner = navigation.local_planner_node:main',
         ],
     },
 )

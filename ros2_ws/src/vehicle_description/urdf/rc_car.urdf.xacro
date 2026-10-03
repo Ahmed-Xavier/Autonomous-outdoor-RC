@@ -167,4 +167,12 @@
     <origin xyz="0 0 ${chassis_height/2}" rpy="0 0 0"/>
   </joint>
 
+  <!-- RPLIDAR A1M8 at the chassis centreline and top surface. -->
+  <link name="lidar_link"/>
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="${chassis_x_offset} 0 ${ground_clearance + chassis_height - wheel_radius}" rpy="0 0 0"/>
+  </joint>
+
 </robot>
