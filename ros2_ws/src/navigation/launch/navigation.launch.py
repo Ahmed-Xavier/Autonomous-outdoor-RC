@@ -7,8 +7,8 @@ import os
 def generate_launch_description():
     config = os.path.join(
         get_package_share_directory('navigation'), 'config',
-        'waypoint_follower.yaml')
+        'waypoint_manager.yaml')
     return LaunchDescription([
-        Node(package='navigation', executable='waypoint_follower',
-             name='goto_waypoint', parameters=[config]),
+        Node(package='navigation', executable='waypoint_manager',
+             name='waypoint_manager', parameters=[config]),
     ])
