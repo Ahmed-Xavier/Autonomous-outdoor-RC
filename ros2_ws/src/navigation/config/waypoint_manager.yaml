@@ -2,10 +2,10 @@ waypoint_manager:
   ros__parameters:
     tol: 3.0
     # Normalized motor command; nonzero values are raised to at least motor_min_pwm (100), so it is NOT gentle.
-    speed: 0.0
+    speed: 0.3
     steer_sign: 1.0
-    k_steer: 1.0
-    max_steer: 0.5
+    k_steer: 1.5
+    max_steer: 0.7
     yaw_offset_deg: 0.0
     gps_timeout: 2.0
     loop_period: 0.1
