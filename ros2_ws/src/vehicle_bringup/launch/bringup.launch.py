@@ -24,10 +24,6 @@ def _launch_setup(context, *args, **kwargs):
     if override and override not in ('true', 'false'):
         raise ValueError("'debug' must be 'true', 'false', or empty")
     debug = yaml_debug if not override else override == 'true'
-    navigation_share = get_package_share_directory('navigation')
-    click_to_goal_config = os.path.join(
-        navigation_share, 'config', 'click_to_goal.yaml')
-
     actions = [
         _include('vehicle_description', 'description.launch.py'),
         _include('vehicle_drivers', 'gps.launch.py'),
@@ -39,8 +35,6 @@ def _launch_setup(context, *args, **kwargs):
             'use_lidar_gate': LaunchConfiguration('use_lidar_gate'),
             'use_local_planner': LaunchConfiguration('use_local_planner'),
         }),
-        Node(package='navigation', executable='click_to_goal',
-             name='click_to_goal', parameters=[click_to_goal_config]),
     ]
     if debug:
         actions.append(_include('vehicle_bringup', 'visualization.launch.py'))

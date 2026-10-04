@@ -11,5 +11,5 @@ cmd_vel_gate:
     rear_x: -0.0575
     half_width: 0.04
     input_topic: /cmd_vel_nav
-    output_topic: /cmd_vel
+    output_topic: /cmd_vel_gated
     scan_topic: /scan

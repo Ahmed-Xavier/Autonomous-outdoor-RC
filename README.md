@@ -55,6 +55,14 @@ The vehicle is split into two main computing layers:
 | LiDAR | LiDAR sensor | Obstacle detection and mapping |
 | Steering | RC steering servo | Front-wheel steering |
 
+### LiDAR Mount Check
+
+The URDF models `lidar_link` on the chassis centerline, with zero yaw, at
+`x = 0.0925 m` from the rear axle. Check the physical LiDAR position,
+orientation, and whether the chassis, wiring, or mast blocks any scan angles;
+the URDF is not confirmation of the actual mount. Configure blocked angles in
+`ros2_ws/src/navigation/config/safety_stop.yaml` under `ignore_sectors`.
+
 ## ESP32 Communication
 
 The ESP32 communicates with the Raspberry Pi over Wi-Fi using **micro-ROS**.

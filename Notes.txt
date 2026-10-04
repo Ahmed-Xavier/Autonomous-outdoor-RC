@@ -1,7 +1,7 @@
 Files that repeat in every package
 package.xml is the ID card: package name, version, and which other packages it needs. ROS reads it to know what to build first.
 CMakeLists.txt (config/launch-only packages) tells the build to copy config/, launch/ and urdf/ to the install folder. If a folder is not listed there, ROS cannot see it after the build.
-setup.py (Python packages) does the same job, and also lists the entry points. An entry point is the line that turns a Python file into a command, so that ros2 run navigation waypoint_follower_node works.
+setup.py (Python packages) does the same job, and also lists the entry points. An entry point is the line that turns a Python file into a command, so that ros2 run navigation waypoint_manager works.
 setup.cfg tells the build where to put the executables.
 resource/<package_name> is an empty marker file. Without it, ROS does not find the package.
 <package>/__init__.py marks the folder as Python code.
@@ -44,9 +44,9 @@ Layer 4: behavior
 
 navigation decides where to steer.
 
-waypoint_follower_node.py is your goto_waypoint.py. It compares the car's position and heading with the goal, and publishes /cmd_vel. If layer 2 gives a correct absolute heading, the node needs no yaw_offset_deg.
-waypoint_follower.yaml: lat, lon, tol, speed, k_steer, max_steer.
-launch/navigation.launch.py starts the node.
+waypoint_manager_node.py collects multiple waypoints from GPS fixes, map clicks, and the /waypoints services. It follows the route using map coordinates and publishes guidance for the local planner.
+waypoint_manager.yaml holds the waypoint manager's tunable values.
+launch/navigation.launch.py starts the waypoint manager, local planner, command gate, and safety stop.
 Layer 5: the main
 
 vehicle_bringup
@@ -54,5 +54,5 @@ vehicle_bringup
 bringup.launch.py includes the other launch files in this order: description, drivers, localization, control, navigation.
 indoor.launch.py is the same without GPS and without the global filter. It only runs the local filter. It is your bench test: rotate the car by hand and see the URDF turn in Foxglove.
 How data flows
-ESP32 / GPS  ->  ekf_local / ekf_global  ->  waypoint_follower  ->  vehicle_controller  ->  ESP32
+ESP32 / GPS  ->  ekf_local / ekf_global  ->  waypoint_manager  ->  local_planner / cmd_vel_gate / safety_stop  ->  vehicle_controller  ->  ESP32
  (layer 1)           (layer 2)                  (layer 4)              (layer 3)

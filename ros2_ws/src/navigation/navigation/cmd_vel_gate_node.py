@@ -25,7 +25,7 @@ class CmdVelGate(Node):
         for name, default in (
             ('stop_distance_m', 0.35), ('min_points', 2), ('timeout_s', 0.5),
             ('front_x', 0.2425), ('rear_x', -0.0575), ('half_width', 0.04),
-            ('input_topic', '/cmd_vel_nav'), ('output_topic', '/cmd_vel'),
+            ('input_topic', '/cmd_vel_nav'), ('output_topic', '/cmd_vel_gated'),
             ('scan_topic', '/scan')):
             self.declare_parameter(name, default)
         self.p = lambda name: self.get_parameter(name).value
@@ -113,6 +113,10 @@ class CmdVelGate(Node):
                         cmd = self.command
                 else:
                     cmd = self.command
+        if status != 'PASS' and self.command is not None:
+            # Stop propulsion while retaining the requested steering through
+            # the downstream safety_stop command filter.
+            cmd.angular.z = self.command.angular.z
         self.pub.publish(cmd)
         s = String()
         s.data = status

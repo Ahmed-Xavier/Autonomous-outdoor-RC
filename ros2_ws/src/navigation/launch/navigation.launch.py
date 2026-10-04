@@ -11,6 +11,7 @@ def _launch_setup(context, *args, **kwargs):
     manager_config = os.path.join(share, 'config', 'waypoint_manager.yaml')
     gate_config = os.path.join(share, 'config', 'cmd_vel_gate.yaml')
     planner_config = os.path.join(share, 'config', 'local_planner.yaml')
+    safety_config = os.path.join(share, 'config', 'safety_stop.yaml')
     use_gate = LaunchConfiguration('use_lidar_gate').perform(context).lower() == 'true'
     use_planner = LaunchConfiguration('use_local_planner').perform(context).lower() == 'true'
     if use_planner and not use_gate:
@@ -18,8 +19,7 @@ def _launch_setup(context, *args, **kwargs):
 
     manager = Node(package='navigation', executable='waypoint_manager',
                    name='waypoint_manager', parameters=[manager_config])
-    if use_gate:
-        manager.remappings = [('/cmd_vel', '/cmd_vel_nav')]
+    manager.remappings = [('/cmd_vel', '/cmd_vel_nav')]
     actions = [manager]
     if use_planner:
         actions.append(Node(package='navigation', executable='local_planner',
@@ -30,6 +30,10 @@ def _launch_setup(context, *args, **kwargs):
             gate_params.append({'input_topic': '/cmd_vel_plan'})
         actions.append(Node(package='navigation', executable='cmd_vel_gate',
                             name='cmd_vel_gate', parameters=gate_params))
+    safety_input = '/cmd_vel_gated' if use_gate else '/cmd_vel_nav'
+    actions.append(Node(
+        package='navigation', executable='safety_stop', name='safety_stop',
+        parameters=[safety_config, {'input_cmd_topic': safety_input}]))
     return actions
 
 

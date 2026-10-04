@@ -9,5 +9,6 @@ def generate_launch_description():
         get_package_share_directory('vehicle_drivers'), 'config', 'lidar.yaml')
     return LaunchDescription([
         Node(package='sllidar_ros2', executable='sllidar_node',
-             name='sllidar_node', parameters=[config], output='screen'),
+             name='sllidar_node', parameters=[config],
+             remappings=[('scan', '/scan')], output='screen'),
     ])

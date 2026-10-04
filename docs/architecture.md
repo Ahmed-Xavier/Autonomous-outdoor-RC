@@ -59,7 +59,7 @@ The ESP32 handles low-level and timing-sensitive functions:
 Files that repeat across individual packages serve specific roles:
 - **`package.xml`**: The package ID card detailing its name, version, and dependencies, which ROS reads to determine build order.
 - **`CMakeLists.txt`**: Used in C++ packages to instruct the build system to copy `config/`, `launch/`, and `urdf/` folders to the install directory. Unlisted folders are invisible to ROS after building.
-- **`setup.py`**: Used in Python packages to manage installations and entry points (e.g., turning Python scripts into commands like `ros2 run navigation waypoint_follower_node`).
+- **`setup.py`**: Used in Python packages to manage installations and entry points (e.g., turning Python scripts into commands like `ros2 run navigation waypoint_manager`).
 - **`setup.cfg`**: Tells the build system where to place executable binaries.
 - **`resource/<package_name>`**: An empty marker file required for ROS package discovery.
 - **`__init__.py`**: Marks subfolders as valid Python code packages.
@@ -96,9 +96,9 @@ Translates high-level commands into low-level actuator signals.
 
 ### Layer 4: Behavior (`navigation`)
 Handles path planning and directional steering.
-- **`waypoint_follower_node.py`**: Compares current vehicle pose against goals to publish target velocities (`/cmd_vel`). If Layer 2 provides a correct absolute heading, this node requires no manual `yaw_offset_deg`.
-- **`waypoint_follower.yaml`**: Configures target waypoints, tolerances, speeds, and steering control gains (`k_steer`, `max_steer`).
-- **`launch/navigation.launch.py`**: Starts the waypoint follower node.
+- **`waypoint_manager_node.py`**: Collects multiple waypoints from GPS fixes, map clicks, and `/waypoints` services, then follows the route using refreshed map coordinates.
+- **`waypoint_manager.yaml`**: Holds the waypoint manager's tunable values.
+- **`launch/navigation.launch.py`**: Starts waypoint management, the local planner, the command gate, and the safety stop.
 
 ### Layer 5: System Bringup (`vehicle_bringup`)
 - **`bringup.launch.py`**: Integrates all system layers in order: description, drivers, localization, control, and navigation.
@@ -118,7 +118,7 @@ The ESP32 connects to the Raspberry Pi over Wi-Fi and communicates with a micro-
 
 ### Overall Pipeline
 ```text
-ESP32 / GPS  ->  ekf_local / ekf_global  ->  waypoint_follower  ->  vehicle_controller  ->  ESP32
+ESP32 / GPS  ->  ekf_local / ekf_global  ->  waypoint_manager  ->  local_planner / cmd_vel_gate / safety_stop  ->  vehicle_controller  ->  ESP32
  (layer 1)           (layer 2)                  (layer 4)              (layer 3)
 ```
 

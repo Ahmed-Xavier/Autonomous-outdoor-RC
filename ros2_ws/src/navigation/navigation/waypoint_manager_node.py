@@ -11,9 +11,6 @@ from std_srvs.srv import Trigger
 from std_msgs.msg import Float32MultiArray
 from visualization_msgs.msg import Marker, MarkerArray
 
-R = 6371000.0
-
-
 def wrap(angle):
     return math.atan2(math.sin(angle), math.cos(angle))
 
@@ -41,13 +38,15 @@ class WaypointManager(Node):
         self.fix = None
         self.last_fix_time = None
         self.yaw = None
+        self.map_position = None
         self.pending_to_ll = False
+        self.pending_start = False
         self.to_ll_generation = 0
         self.pending_from_ll_index = None
         self.from_ll_generation = 0
         self.last_from_ll_attempt = {}
 
-        self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.cmd_pub = self.create_publisher(Twist, '/cmd_vel_nav', 10)
         marker_qos = rclpy.qos.QoSProfile(
             history=rclpy.qos.HistoryPolicy.KEEP_LAST,
             depth=1,
@@ -79,6 +78,8 @@ class WaypointManager(Node):
             self.last_fix_time = self.get_clock().now()
 
     def on_odom(self, msg):
+        position = msg.pose.pose.position
+        self.map_position = (position.x, position.y)
         q = msg.pose.pose.orientation
         self.yaw = math.atan2(
             2 * (q.w * q.z + q.x * q.y),
@@ -98,6 +99,10 @@ class WaypointManager(Node):
         if self.state != 'COLLECTING':
             response.success = False
             response.message = f'Cannot add a waypoint while {self.state}; clear first'
+            return response
+        if self.pending_start:
+            response.success = False
+            response.message = 'Cannot add a waypoint while route coordinates are refreshing'
             return response
         if self.fix is None or self.last_fix_time is None:
             response.success = False
@@ -119,20 +124,39 @@ class WaypointManager(Node):
             response.success = False
             response.message = f'Cannot start while {self.state}; clear first'
             return response
+        if self.pending_start:
+            response.success = False
+            response.message = 'Route map coordinates are already being refreshed'
+            return response
         if not self.waypoints:
             response.success = False
             response.message = 'Add at least one waypoint before starting'
             return response
-        self.state = 'RUNNING'
-        self.index = 0
+        # Latitude/longitude remain authoritative. Refresh all cached map
+        # coordinates because the localization datum may have changed.
+        self.pending_start = True
+        self.from_ll_generation += 1
         self.pending_from_ll_index = None
         self.last_from_ll_attempt.clear()
         for waypoint in self.waypoints:
             waypoint['map'] = None
         self.publish_markers()
+        self.request_from_ll()
         response.success = True
-        response.message = f'Started route with {len(self.waypoints)} waypoint(s)'
+        response.message = (
+            f'Refreshing map coordinates for {len(self.waypoints)} waypoint(s); '
+            'route will start when ready')
         return response
+
+    def begin_running_if_ready(self):
+        if (self.pending_start and self.waypoints and
+                all(waypoint['map'] is not None for waypoint in self.waypoints)):
+            self.pending_start = False
+            self.index = 0
+            self.state = 'RUNNING'
+            self.get_logger().info(
+                f'Started route with {len(self.waypoints)} waypoint(s)')
+            self.publish_markers()
 
     def clear(self, _request, response):
         self.stop()
@@ -140,6 +164,7 @@ class WaypointManager(Node):
         self.last_from_ll_attempt.clear()
         self.pending_from_ll_index = None
         self.from_ll_generation += 1
+        self.pending_start = False
         self.pending_to_ll = False
         self.to_ll_generation += 1
         self.state = 'COLLECTING'
@@ -150,6 +175,10 @@ class WaypointManager(Node):
         return response
 
     def undo(self, _request, response):
+        if self.pending_start:
+            response.success = False
+            response.message = 'Cannot undo while route map coordinates are refreshing'
+            return response
         if self.state != 'COLLECTING':
             response.success = False
             response.message = f'Cannot undo while {self.state}; clear first'
@@ -167,6 +196,11 @@ class WaypointManager(Node):
         return response
 
     def on_click(self, msg):
+        if self.pending_start:
+            self.get_logger().warning(
+                'Ignoring map click while route map coordinates are refreshing',
+                throttle_duration_sec=5.0)
+            return
         if self.state != 'COLLECTING':
             self.get_logger().warning(
                 f'Ignoring map click while {self.state}', throttle_duration_sec=5.0)
@@ -258,19 +292,22 @@ class WaypointManager(Node):
         point = response.map_point
         self.waypoints[index]['map'] = (point.x, point.y)
         self.publish_markers()
+        self.begin_running_if_ready()
 
     def loop(self):
         if self.state == 'COLLECTING':
             self.stop()
             self.request_from_ll()
+            self.begin_running_if_ready()
             return
         if self.state != 'RUNNING':
             self.stop()
             return
         self.request_from_ll()
-        if self.fix is None or self.yaw is None or self.last_fix_time is None:
+        if (self.fix is None or self.yaw is None or self.map_position is None or
+                self.last_fix_time is None):
             self.stop()
-            self.get_logger().warning('GPS fix or global yaw missing; stopping',
+            self.get_logger().warning('GPS fix or global odometry missing; stopping',
                                       throttle_duration_sec=5.0)
             return
         age = (self.get_clock().now() - self.last_fix_time).nanoseconds / 1e9
@@ -279,9 +316,15 @@ class WaypointManager(Node):
             self.get_logger().warning('/fix is stale; stopping', throttle_duration_sec=5.0)
             return
         waypoint = self.waypoints[self.index]
-        lat, lon = self.fix
-        d_north = math.radians(waypoint['lat'] - lat) * R
-        d_east = math.radians(waypoint['lon'] - lon) * R * math.cos(math.radians(lat))
+        if waypoint['map'] is None:
+            self.stop()
+            self.get_logger().warning(
+                'Target map coordinate missing; stopping', throttle_duration_sec=5.0)
+            return
+        x, y = self.map_position
+        target_x, target_y = waypoint['map']
+        d_east = target_x - x
+        d_north = target_y - y
         distance = math.hypot(d_east, d_north)
         if distance <= self.p('tol'):
             self.stop()

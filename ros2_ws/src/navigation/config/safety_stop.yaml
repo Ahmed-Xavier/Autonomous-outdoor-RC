@@ -1,0 +1,17 @@
+safety_stop:
+  ros__parameters:
+    scan_topic: /scan
+    input_cmd_topic: /cmd_vel_gated
+    output_cmd_topic: /cmd_vel
+    obstacle_stop_topic: /obstacle_stop
+    half_angle_deg: 20.0
+    # Obstacle distance is measured from the modeled front bumper.
+    stop_distance_m: 0.15
+    clear_distance_m: 0.20
+    # Measured LIDAR-to-front-bumper distance: 16 cm.
+    front_offset_m: 0.16
+    timeout_s: 0.5
+    loop_period_s: 0.05
+    # Start/end pairs in scan degrees. Keep empty until physical scan
+    # occlusions from the chassis, wires, or mast are observed.
+    ignore_sectors: []
