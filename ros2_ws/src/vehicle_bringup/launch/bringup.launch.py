@@ -53,7 +53,7 @@ def generate_launch_description():
                               description='Override bringup.yaml debug setting'),
         DeclareLaunchArgument('use_lidar_gate', default_value='true',
                               description='Enable the /scan command safety gate'),
-        DeclareLaunchArgument('use_local_planner', default_value='false',
+        DeclareLaunchArgument('use_local_planner', default_value='true',
                               description='Enable local obstacle steering before the gate'),
         OpaqueFunction(function=_launch_setup),
     ])
