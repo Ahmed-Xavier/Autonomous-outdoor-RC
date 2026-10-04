@@ -12,6 +12,6 @@ safety_stop:
     front_offset_m: 0.16
     timeout_s: 0.5
     loop_period_s: 0.05
-    # Start/end pairs in scan degrees. Keep empty until physical scan
-    # occlusions from the chassis, wires, or mast are observed.
+    # Flat start/end angle pairs in degrees, e.g. [-15.0, 15.0, 170.0, -170.0].
+    # Keep empty until physical scan occlusions are observed.
     ignore_sectors: []

@@ -3,6 +3,7 @@ import math
 
 import rclpy
 from geometry_msgs.msg import Twist
+from rcl_interfaces.msg import ParameterDescriptor
 from rclpy.node import Node
 from rclpy.parameter import Parameter
 from sensor_msgs.msg import LaserScan
@@ -22,14 +23,22 @@ class SafetyStop(Node):
                 ('clear_distance_m', Parameter.Type.DOUBLE),
                 ('front_offset_m', Parameter.Type.DOUBLE),
                 ('timeout_s', Parameter.Type.DOUBLE),
-                ('loop_period_s', Parameter.Type.DOUBLE),
-                ('ignore_sectors', Parameter.Type.DOUBLE_ARRAY)):
+                ('loop_period_s', Parameter.Type.DOUBLE)):
             self.declare_parameter(name, param_type)
+        self.declare_parameter(
+            'ignore_sectors', [],
+            descriptor=ParameterDescriptor(dynamic_typing=True))
         self.p = lambda name: self.get_parameter(name).value
 
         sectors = self.p('ignore_sectors')
+        if sectors is None:
+            sectors = []
         if len(sectors) % 2:
-            raise ValueError('ignore_sectors must contain start/end angle pairs in degrees')
+            self.get_logger().error(
+                'ignore_sectors must be a flat list of start/end angle pairs in degrees; '
+                'ignoring all sectors')
+            sectors = []
+        self.ignore_sectors = list(sectors)
         if self.p('clear_distance_m') <= self.p('stop_distance_m'):
             raise ValueError('clear_distance_m must be greater than stop_distance_m')
 
@@ -55,7 +64,7 @@ class SafetyStop(Node):
 
     def is_ignored(self, angle_deg):
         angle_deg = (angle_deg + 180.0) % 360.0 - 180.0
-        sectors = self.p('ignore_sectors')
+        sectors = self.ignore_sectors
         for index in range(0, len(sectors), 2):
             start = (sectors[index] + 180.0) % 360.0 - 180.0
             end = (sectors[index + 1] + 180.0) % 360.0 - 180.0
