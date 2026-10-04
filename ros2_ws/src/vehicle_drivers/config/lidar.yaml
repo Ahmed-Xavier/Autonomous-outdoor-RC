@@ -4,4 +4,4 @@ sllidar_node:
     serial_baudrate: 115200
     frame_id: lidar_link
     angle_compensate: true
-    scan_mode: Sensitivity
+    scan_mode: Standard

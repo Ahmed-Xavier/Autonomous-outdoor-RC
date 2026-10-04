@@ -37,7 +37,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('use_lidar_gate', default_value='true',
                               description='Gate all motion through the /scan safety node'),
-        DeclareLaunchArgument('use_local_planner', default_value='false',
+        DeclareLaunchArgument('use_local_planner', default_value='true',
                               description='Insert the local obstacle planner before the gate'),
         OpaqueFunction(function=_launch_setup),
     ])
