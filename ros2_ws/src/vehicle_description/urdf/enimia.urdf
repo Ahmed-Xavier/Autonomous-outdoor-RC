@@ -34,6 +34,9 @@
   <material name="rim"><color rgba="0.82 0.82 0.84 1.0"/></material>
   <material name="floor"><color rgba="0.35 0.30 0.70 1.0"/></material>
   <material name="battery"><color rgba="0.85 0.80 0.15 1.0"/></material>
+  <material name="lidar_body"><color rgba="0.12 0.14 0.18 1.0"/></material>
+  <material name="gps_white"><color rgba="0.92 0.92 0.92 1.0"/></material>
+  <material name="pcb_green"><color rgba="0.05 0.45 0.20 1.0"/></material>
 
   <!-- ===================== Base ===================== -->
   <link name="base_footprint"/>
@@ -282,43 +285,110 @@
     <dynamics damping="0.01" friction="0.0"/>
   </joint>
 
-  <!-- ===================== Capteurs ===================== -->
+  <!-- ===================== Capteurs (sur le toit) ===================== -->
   <!--
-    Repere REP-103: X avant, Y gauche, Z haut.
-    Positions de simulation: a remplacer par les mesures reelles des supports.
+    Repere REP-103 : X avant, Y gauche, Z haut.
+    Une plaque de montage est posee sur le sommet du toit (point haut de la coque : z_sol = 0.694 m,
+    plat sur environ x = -0.15 a +0.30 m et |y| < 0.10 m). Tout est monte dessus :
+      - LiDAR sur un petit mat, au-dessus du toit pour avoir 360 degres libres,
+        incline de 8 deg vers l'avant (+pitch autour de Y) pour voir les petits cones ;
+      - GPS derriere le LiDAR, plus bas que le plan de scan (le LiDAR incline ne le voit jamais) ;
+      - IMU a cote du LiDAR (cote gauche), a plat, axes alignes sur le vehicule (rpy = 0).
+    Positions de simulation : a remplacer par les mesures reelles des supports.
   -->
+  <link name="sensor_mount_link">
+    <visual>
+      <origin xyz="0 0 -0.003" rpy="0 0 0"/>
+      <geometry><box size="0.30 0.20 0.006"/></geometry>
+      <material name="aluminium"/>
+    </visual>
+    <visual>
+      <origin xyz="0.070 0 0.027" rpy="0 0 0"/>
+      <geometry><cylinder radius="0.012" length="0.054"/></geometry>
+      <material name="aluminium"/>
+    </visual>
+    <inertial>
+      <origin xyz="0 0 0.0" rpy="0 0 0"/>
+      <mass value="0.2"/>
+      <inertia ixx="0.0006817" ixy="0" ixz="0" iyy="0.001515" iyz="0" izz="0.002167"/>
+    </inertial>
+  </link>
 
-  <!-- IMU: proche du centre du chassis, sur la ligne mediane. -->
-  <link name="imu_link"/>
-  <joint name="imu_joint" type="fixed">
+  <joint name="sensor_mount_joint" type="fixed">
     <parent link="base_link"/>
-    <child link="imu_link"/>
-    <origin xyz="0.000 0.000 0.060" rpy="0 0 0"/>
+    <child link="sensor_mount_link"/>
+    <origin xyz="0.050 0.000 0.492" rpy="0 0 0"/>
   </joint>
 
-  <!-- GPS/GNSS: au-dessus de la coque, sur la ligne mediane. -->
-  <link name="gps_link"/>
-  <joint name="gps_joint" type="fixed">
-    <parent link="base_link"/>
-    <child link="gps_link"/>
-    <origin xyz="-0.100 0.000 0.455" rpy="0 0 0"/>
-  </joint>
+  <!-- LiDAR (RPLIDAR A1M8) : origine = plan de scan. +8 deg de pitch => l'axe X du LiDAR pointe vers le sol, devant. -->
+  <link name="lidar_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><cylinder radius="0.0355" length="0.041"/></geometry>
+      <material name="lidar_body"/>
+    </visual>
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.17"/>
+      <inertia ixx="7.737e-05" ixy="0" ixz="0" iyy="7.737e-05" iyz="0" izz="0.0001071"/>
+    </inertial>
+  </link>
 
-  <!--
-    LiDAR: 8 deg incline vers le bas pour mieux voir les petits cones
-    et obstacles bas du Shell Eco-marathon.
-    +8 deg de pitch autour de Y => axe X du LiDAR pointe legerement vers le sol.
-  -->
-  <link name="lidar_link"/>
   <joint name="lidar_joint" type="fixed">
-    <parent link="base_link"/>
+    <parent link="sensor_mount_link"/>
     <child link="lidar_link"/>
-    <origin xyz="0.100 0.000 0.445" rpy="0 0.139626 0"/>
+    <origin xyz="0.070 0.000 0.075" rpy="0 0.139626 0"/>
+  </joint>
+
+  <!-- GPS/GNSS (antenne GT-U7) : origine = sommet de l'antenne, derriere le LiDAR, sur la ligne mediane. -->
+  <link name="gps_link">
+    <visual>
+      <origin xyz="0 0 -0.005" rpy="0 0 0"/>
+      <geometry><box size="0.03 0.03 0.01"/></geometry>
+      <material name="gps_white"/>
+    </visual>
+    <inertial>
+      <origin xyz="0 0 -0.005" rpy="0 0 0"/>
+      <mass value="0.03"/>
+      <inertia ixx="2.5e-06" ixy="0" ixz="0" iyy="2.5e-06" iyz="0" izz="4.5e-06"/>
+    </inertial>
+  </link>
+
+  <joint name="gps_joint" type="fixed">
+    <parent link="sensor_mount_link"/>
+    <child link="gps_link"/>
+    <origin xyz="-0.100 0.000 0.010" rpy="0 0 0"/>
+  </joint>
+
+  <!-- IMU (BNO055) : a plat sur la plaque, a gauche du LiDAR, axes alignes sur base_link. -->
+  <link name="imu_link">
+    <visual>
+      <origin xyz="0 0 0.002" rpy="0 0 0"/>
+      <geometry><box size="0.027 0.020 0.004"/></geometry>
+      <material name="pcb_green"/>
+    </visual>
+    <inertial>
+      <origin xyz="0 0 0.002" rpy="0 0 0"/>
+      <mass value="0.005"/>
+      <inertia ixx="1.733e-07" ixy="0" ixz="0" iyy="3.104e-07" iyz="0" izz="4.704e-07"/>
+    </inertial>
+  </link>
+
+  <joint name="imu_joint" type="fixed">
+    <parent link="sensor_mount_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0.070 0.070 0.000" rpy="0 0 0"/>
   </joint>
 
   <!-- ===================== Gazebo (adherence pneus) ===================== -->
   <gazebo reference="front_left_wheel_link"><mu1>1.0</mu1><mu2>1.0</mu2></gazebo>
   <gazebo reference="front_right_wheel_link"><mu1>1.0</mu1><mu2>1.0</mu2></gazebo>
   <gazebo reference="rear_wheel_link"><mu1>1.0</mu1><mu2>1.0</mu2></gazebo>
+
+  <!-- Gazebo Sim : publie les etats des articulations (direction + roues) pour /joint_states via ros_gz_bridge -->
+  <gazebo>
+    <plugin filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher"/>
+  </gazebo>
 
 </robot>
