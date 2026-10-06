@@ -1,0 +1,12 @@
+mtllib silesia_ring.mtl
+o SilesiaRingMap
+v -429.6180 -429.6180 0
+v 429.6180 -429.6180 0
+v 429.6180 429.6180 0
+v -429.6180 429.6180 0
+vt 0 0
+vt 1 0
+vt 1 1
+vt 0 1
+usemtl SilesiaRingMap
+f 1/1 2/2 3/3 4/4
