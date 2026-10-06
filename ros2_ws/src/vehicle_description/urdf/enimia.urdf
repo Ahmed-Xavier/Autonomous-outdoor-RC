@@ -337,7 +337,7 @@
   <joint name="lidar_joint" type="fixed">
     <parent link="sensor_mount_link"/>
     <child link="lidar_link"/>
-    <origin xyz="0.070 0.000 0.075" rpy="0 0.139626 0"/>
+    <origin xyz="0.070 0.000 0.075" rpy="0 0.07 0"/>
   </joint>
 
   <!-- GPS/GNSS (antenne GT-U7) : origine = sommet de l'antenne, derriere le LiDAR, sur la ligne mediane. -->

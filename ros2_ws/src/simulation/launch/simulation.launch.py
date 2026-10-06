@@ -93,6 +93,22 @@ def generate_launch_description():
         output="screen",
     )
 
+    world_markers = Node(
+        package="simulation",
+        executable="world_markers.py",
+        parameters=[{"frame_id": "map"}],
+        output="screen",
+    )
+
+    # Gives Foxglove a root frame; the car sits at the map origin until
+    # odometry / localization publishes map -> base_footprint.
+    map_tf = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        arguments=["--frame-id", "map", "--child-frame-id", "base_footprint"],
+        output="screen",
+    )
+
     return LaunchDescription([
         resource_path,
         description,
@@ -100,4 +116,6 @@ def generate_launch_description():
         spawn,
         bridge,
         foxglove,
+        world_markers,
+        map_tf,
     ])
