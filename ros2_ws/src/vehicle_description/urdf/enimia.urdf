@@ -107,22 +107,22 @@
   <link name="body_link">
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry><mesh filename="package://enimia_black_description/meshes/body_shell.dae"/></geometry>
+      <geometry><mesh filename="package://vehicle_description/meshes/body_shell.dae"/></geometry>
       <material name="carbon_black"/>
     </visual>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry><mesh filename="package://enimia_black_description/meshes/canopy.dae"/></geometry>
+      <geometry><mesh filename="package://vehicle_description/meshes/canopy.dae"/></geometry>
       <material name="glass"/>
     </visual>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry><mesh filename="package://enimia_black_description/meshes/tail_tip.dae"/></geometry>
+      <geometry><mesh filename="package://vehicle_description/meshes/tail_tip.dae"/></geometry>
       <material name="tail_red"/>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry><mesh filename="package://enimia_black_description/meshes/body_collision.stl"/></geometry>
+      <geometry><mesh filename="package://vehicle_description/meshes/body_collision.stl"/></geometry>
     </collision>
     <inertial>
       <origin xyz="0.1939 0 0.329146" rpy="0 0 0"/>
