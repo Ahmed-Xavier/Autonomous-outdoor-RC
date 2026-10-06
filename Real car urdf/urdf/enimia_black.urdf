@@ -282,6 +282,40 @@
     <dynamics damping="0.01" friction="0.0"/>
   </joint>
 
+  <!-- ===================== Capteurs ===================== -->
+  <!--
+    Repere REP-103: X avant, Y gauche, Z haut.
+    Positions de simulation: a remplacer par les mesures reelles des supports.
+  -->
+
+  <!-- IMU: proche du centre du chassis, sur la ligne mediane. -->
+  <link name="imu_link"/>
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0.000 0.000 0.060" rpy="0 0 0"/>
+  </joint>
+
+  <!-- GPS/GNSS: au-dessus de la coque, sur la ligne mediane. -->
+  <link name="gps_link"/>
+  <joint name="gps_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="gps_link"/>
+    <origin xyz="-0.100 0.000 0.455" rpy="0 0 0"/>
+  </joint>
+
+  <!--
+    LiDAR: 8 deg incline vers le bas pour mieux voir les petits cones
+    et obstacles bas du Shell Eco-marathon.
+    +8 deg de pitch autour de Y => axe X du LiDAR pointe legerement vers le sol.
+  -->
+  <link name="lidar_link"/>
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="0.100 0.000 0.445" rpy="0 0.139626 0"/>
+  </joint>
+
   <!-- ===================== Gazebo (adherence pneus) ===================== -->
   <gazebo reference="front_left_wheel_link"><mu1>1.0</mu1><mu2>1.0</mu2></gazebo>
   <gazebo reference="front_right_wheel_link"><mu1>1.0</mu1><mu2>1.0</mu2></gazebo>
