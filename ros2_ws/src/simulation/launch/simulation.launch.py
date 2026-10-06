@@ -27,11 +27,7 @@ def generate_launch_description():
 
     description = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(
-                desc_share,
-                "launch",
-                "description.launch.py"
-            )
+            os.path.join(desc_share, "launch", "description.launch.py")
         ),
         launch_arguments={"use_sim_time": "true"}.items(),
     )
@@ -44,11 +40,8 @@ def generate_launch_description():
                 "gz_sim.launch.py"
             )
         ),
-        # -s = server only
-        # -r = run immediately
-        launch_arguments={
-            "gz_args": f"-r -s {world}"
-        }.items(),
+        # -s = server only, -r = run immediately
+        launch_arguments={"gz_args": f"-r -s {world}"}.items(),
     )
 
     spawn = TimerAction(
@@ -74,9 +67,17 @@ def generate_launch_description():
         arguments=[
             "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
             "/world/silesia_ring/model/enimia/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model",
+            # ground-truth odometry and TF (map -> base_footprint) from Gazebo
+            "/enimia/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry",
+            "/enimia/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V",
+            # drive and steering commands, ROS -> Gazebo
+            "/enimia/rear_wheel_cmd@std_msgs/msg/Float64]gz.msgs.Double",
+            "/enimia/steer_left_cmd@std_msgs/msg/Float64]gz.msgs.Double",
+            "/enimia/steer_right_cmd@std_msgs/msg/Float64]gz.msgs.Double",
             "--ros-args",
-            "-r",
-            "/world/silesia_ring/model/enimia/joint_state:=/joint_states",
+            "-r", "/world/silesia_ring/model/enimia/joint_state:=/joint_states",
+            "-r", "/enimia/odom:=/odom",
+            "-r", "/enimia/tf:=/tf",
         ],
         output="screen",
     )
@@ -84,12 +85,7 @@ def generate_launch_description():
     foxglove = Node(
         package="foxglove_bridge",
         executable="foxglove_bridge",
-        parameters=[
-            {
-                "port": 8765,
-                "use_sim_time": True,
-            }
-        ],
+        parameters=[{"port": 8765, "use_sim_time": True}],
         output="screen",
     )
 
@@ -100,12 +96,23 @@ def generate_launch_description():
         output="screen",
     )
 
-    # Gives Foxglove a root frame; the car sits at the map origin until
-    # odometry / localization publishes map -> base_footprint.
-    map_tf = Node(
-        package="tf2_ros",
-        executable="static_transform_publisher",
-        arguments=["--frame-id", "map", "--child-frame-id", "base_footprint"],
+    # The real controller: /cmd_vel -> /esp32/motor_cmd + /esp32/servo_cmd.
+    # vehicle_state is not started: it needs /esp32/encoder, and Gazebo
+    # publishes /joint_states and /odom itself.
+    vehicle_controller = Node(
+        package="vehicle_control",
+        executable="vehicle_controller",
+        name="vehicle_controller",
+        parameters=[os.path.join(
+            get_package_share_directory("vehicle_control"),
+            "config", "vehicle_controller.yaml")],
+        output="screen",
+    )
+
+    # Simulated ESP32: /esp32/* -> Gazebo joints
+    esp32_sim_bridge = Node(
+        package="simulation",
+        executable="esp32_sim_bridge.py",
         output="screen",
     )
 
@@ -117,5 +124,6 @@ def generate_launch_description():
         bridge,
         foxglove,
         world_markers,
-        map_tf,
+        vehicle_controller,
+        esp32_sim_bridge,
     ])

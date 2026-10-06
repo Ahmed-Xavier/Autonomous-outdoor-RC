@@ -391,4 +391,43 @@
             name="gz::sim::systems::JointStatePublisher"/>
   </gazebo>
 
+
+  <!-- cmd_vel drive plugins: rear wheel velocity, front steering, ground-truth odometry -->
+  <gazebo>
+    <plugin filename="gz-sim-joint-controller-system"
+            name="gz::sim::systems::JointController">
+      <joint_name>rear_wheel_joint</joint_name>
+      <topic>/enimia/rear_wheel_cmd</topic>
+    </plugin>
+    <plugin filename="gz-sim-joint-position-controller-system"
+            name="gz::sim::systems::JointPositionController">
+      <joint_name>front_left_steer_joint</joint_name>
+      <topic>/enimia/steer_left_cmd</topic>
+      <p_gain>10</p_gain>
+      <i_gain>0</i_gain>
+      <d_gain>1</d_gain>
+      <cmd_max>20</cmd_max>
+      <cmd_min>-20</cmd_min>
+    </plugin>
+    <plugin filename="gz-sim-joint-position-controller-system"
+            name="gz::sim::systems::JointPositionController">
+      <joint_name>front_right_steer_joint</joint_name>
+      <topic>/enimia/steer_right_cmd</topic>
+      <p_gain>10</p_gain>
+      <i_gain>0</i_gain>
+      <d_gain>1</d_gain>
+      <cmd_max>20</cmd_max>
+      <cmd_min>-20</cmd_min>
+    </plugin>
+    <plugin filename="gz-sim-odometry-publisher-system"
+            name="gz::sim::systems::OdometryPublisher">
+      <odom_frame>map</odom_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+      <odom_topic>/enimia/odom</odom_topic>
+      <tf_topic>/enimia/tf</tf_topic>
+      <odom_publish_frequency>30</odom_publish_frequency>
+      <dimensions>3</dimensions>
+    </plugin>
+  </gazebo>
+
 </robot>
