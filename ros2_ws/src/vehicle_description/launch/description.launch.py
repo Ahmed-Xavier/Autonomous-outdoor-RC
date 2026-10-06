@@ -6,10 +6,14 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    xacro_file = PathJoinSubstitution(
-        [FindPackageShare("vehicle_description"), "urdf", "rc_car.urdf.xacro"]
+    urdf_file = PathJoinSubstitution(
+        [FindPackageShare("vehicle_description"), "urdf", "enimia.urdf"]
     )
-    robot_description = ParameterValue(Command(["xacro ", xacro_file]), value_type=str)
+
+    robot_description = ParameterValue(
+        Command(["cat ", urdf_file]),
+        value_type=str,
+    )
 
     return LaunchDescription([
         Node(
