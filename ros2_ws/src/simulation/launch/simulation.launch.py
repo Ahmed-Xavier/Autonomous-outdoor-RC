@@ -21,7 +21,7 @@ def generate_launch_description():
         "GZ_SIM_RESOURCE_PATH",
         os.pathsep.join([
             os.path.dirname(desc_share),
-            os.path.join(sim_share, "worlds"),
+            os.path.join(sim_share, "worlds", "models"),
         ])
     )
 
