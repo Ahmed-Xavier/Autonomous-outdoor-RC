@@ -120,20 +120,28 @@ Signal -> ESP32 GPIO 14
 
 # Current Development Status
 
-Working/tested:
+Working/tested (real car):
 - ESP32 Wi-Fi micro-ROS connection
 - L298N motor control
 - Steering servo control
-- JGA25-370 encoder acquisition
-- Encoder publishing at approximately 20 Hz
+- JGA25-370 encoder acquisition (~20 Hz)
 - ROS 2 topic communication
 - Foxglove visualization
+- GT-U7 GPS integration
+- BNO055 IMU integration (~50 Hz)
+- LiDAR integration
+- EKF localization (local + global, navsat_transform)
+- Autonomous GPS waypoint navigation
+
+Simulation (active focus — Gazebo headless in WSL + Foxglove):
+- Real car URDF running in Gazebo headless
+- Teleop control via /cmd_vel (steering + speed) working
+- Next: sensor data (GPS, IMU, LiDAR) in simulation
+- Then: full navigation stack in simulation
+- Then: camera integration
+- Then: /cmd_vel arbiter node (chooses between teleop and autonomy)
 
 In progress:
-- ESP32 ROS 2 bridge
-- BNO055 integration
-- GT-U7 integration
-- Camera perception
-- LiDAR integration
-- Localization and sensor fusion
-- Autonomous navigation
+- Sensor simulation in Gazebo
+- Camera perception (lane keeping, stop sign detection)
+- /cmd_vel arbiter

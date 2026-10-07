@@ -24,61 +24,69 @@
 - Standard vehicle command interface
 
 ## Phase 3 — Sensor Integration
-**Status:** IN PROGRESS
+**Status:** DONE
 
-- BNO055 wired and tested
-- IMU publishing at ~50 Hz
+- BNO055 IMU wired, tested, publishing at ~50 Hz
 - GT-U7 GPS integration
 - LiDAR integration
-- Hikvision camera integration
 - Complete ESP32 sensor bridge
 
 ## Phase 4 — Localization
-**Status:** PLANNED
+**Status:** DONE
 
 - Wheel odometry
 - IMU processing
 - GPS position
-- Sensor fusion
+- EKF sensor fusion (local + global)
 - Vehicle TF tree
-- Outdoor localization testing
+- navsat_transform (lat/lon → map frame)
+- Outdoor localization tested
 
-## Phase 5 — Perception
+## Phase 5 — Simulation
+**Status:** IN PROGRESS
+
+Replicating the full real-car stack in Gazebo (headless, WSL) with Foxglove.
+
+- ✅ Real car URDF running in Gazebo headless
+- ✅ Teleop control via `/cmd_vel` (steering + speed)
+- 🔄 Sensor simulation: GPS, IMU, LiDAR publishing in Gazebo
+- 🔄 Navigation stack validated in simulation
+- ⬜ Camera simulation
+- ⬜ `/cmd_vel` arbiter (selects between teleop and autonomy)
+
+## Phase 6 — Autonomous Navigation
+**Status:** DONE (real car)
+
+- GPS waypoint management
+- Path planning (local planner)
+- Autonomous speed control
+- Autonomous steering
+- Safety stop (LiDAR-based)
+- Full autonomy tested on real car
+
+## Phase 7 — Perception
 **Status:** PLANNED
 
 - Lane detection
 - Lane keeping
 - Stop sign detection
-- LiDAR obstacle detection
-- Obstacle avoidance
+- LiDAR obstacle avoidance
 
-## Phase 6 — Autonomous Navigation
+## Phase 8 — Command Arbitration
 **Status:** PLANNED
 
-- GPS waypoint management
-- Path planning
-- Autonomous speed control
-- Autonomous steering
-- Navigation behavior manager
-- Full autonomy test
-
-## Phase 7 — Safety & Integration
-**Status:** PLANNED
-
-- Command arbitration
+- `/cmd_vel` arbiter node (teleop / autonomy / e-stop priority)
 - Emergency stop
 - Communication-loss handling
 - Sensor failure handling
 - Safe-stop behavior
-- Full-system bringup
 
-## Phase 8 — Outdoor Testing
+## Phase 9 — Outdoor Testing
 **Status:** PLANNED
 
-- Manual driving tests
-- Sensor validation
-- GPS tests
-- Localization tests
+- Full simulation validation before deployment
+- Sensor validation on real car
+- GPS and localization tests
 - Perception tests
 - Autonomous driving tests
 - Long-duration testing

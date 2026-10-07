@@ -93,7 +93,7 @@ ESP32 control pins are documented in `docs/hardware.md` and match the current fi
 
 ## Current Status
 
-### Working / tested
+### Working / tested (real car)
 
 - ESP32 Wi-Fi micro-ROS communication
 - L298N motor control
@@ -103,20 +103,28 @@ ESP32 control pins are documented in `docs/hardware.md` and match the current fi
 - Raspberry Pi micro-ROS agent
 - ROS 2 topic communication
 - Foxglove visualization
-- Map visualization/testing in Foxglove using a Google Earth screenshot
+- Map visualization in Foxglove using a Google Earth screenshot
+- GT-U7 GPS integration
+- BNO055 IMU integration
+- LiDAR integration
+- Localization and sensor fusion (EKF local + global, navsat_transform)
+- Autonomous GPS waypoint navigation
+
+### Simulation (active focus)
+
+Testing the real car URDF in Gazebo (headless, WSL) with Foxglove visualization.
+
+- ✅ Real car URDF running in Gazebo headless
+- ✅ Teleop control (steering and speed) working through `/cmd_vel`
+- 🔄 Sensor data: GPS, IMU, LiDAR in simulation
+- 🔄 Navigation stack in simulation
+- ⬜ Camera integration
+- ⬜ `/cmd_vel` arbitration (command arbiter between autonomy and teleop)
 
 ### In progress
 
-- ROS 2 ESP32 bridge node
-- Standardized vehicle interface messages
-- GT-U7 GPS integration
-- BNO055 integration
-- Camera perception
-- LiDAR integration
-- Localization and sensor fusion
-- Autonomous waypoint navigation
-- Lane and traffic-sign perception
-- Obstacle avoidance
+- Camera perception (lane keeping, stop sign detection)
+- `/cmd_vel` arbiter node (chooses between teleop and autonomy)
 
 ## Repository Structure
 
