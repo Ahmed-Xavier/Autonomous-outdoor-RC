@@ -10,6 +10,8 @@ from sensor_msgs.msg import NavSatFix
 from std_srvs.srv import Trigger
 from std_msgs.msg import Float32MultiArray
 from visualization_msgs.msg import Marker, MarkerArray
+from tf2_ros import Buffer, TransformListener
+from .cmd_vel_gate_node import transform_xy
 
 def wrap(angle):
     return math.atan2(math.sin(angle), math.cos(angle))
@@ -48,6 +50,9 @@ class WaypointManager(Node):
         self.pending_from_ll_index = None
         self.from_ll_generation = 0
         self.last_from_ll_attempt = {}
+
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel_nav', 10)
         marker_qos = rclpy.qos.QoSProfile(
@@ -213,11 +218,22 @@ class WaypointManager(Node):
             self.get_logger().warning(
                 f'Ignoring map click while {self.state}', throttle_duration_sec=5.0)
             return
-        if msg.header.frame_id != 'map':
-            self.get_logger().warning(
-                f"Ignoring clicked point with frame '{msg.header.frame_id}'; expected 'map'",
-                throttle_duration_sec=5.0)
-            return
+
+        x = msg.point.x
+        y = msg.point.y
+        frame_id = msg.header.frame_id or 'map'
+
+        if frame_id != 'map':
+            try:
+                tr = self.tf_buffer.lookup_transform(
+                    'map', frame_id, rclpy.time.Time(), timeout=rclpy.duration.Duration(seconds=0.2))
+                x, y = transform_xy(x, y, tr)
+            except Exception as exc:
+                self.get_logger().warning(
+                    f"Could not transform clicked point from frame '{frame_id}' to 'map': {exc}",
+                    throttle_duration_sec=5.0)
+                return
+
         if self.pending_to_ll:
             self.get_logger().warning('toLL request already pending; dropping map click',
                                        throttle_duration_sec=5.0)
@@ -229,15 +245,15 @@ class WaypointManager(Node):
             return
 
         request = ToLL.Request()
-        request.map_point.x = msg.point.x
-        request.map_point.y = msg.point.y
+        request.map_point.x = x
+        request.map_point.y = y
         request.map_point.z = 0.0
         self.pending_to_ll = True
         generation = self.to_ll_generation
         future = self.to_ll_client.call_async(request)
         future.add_done_callback(
-            lambda result, x=msg.point.x, y=msg.point.y, g=generation:
-                self.on_to_ll_response(result, x, y, g))
+            lambda result, px=x, py=y, g=generation:
+                self.on_to_ll_response(result, px, py, g))
 
     def on_to_ll_response(self, future, x, y, generation):
         if generation != self.to_ll_generation:
@@ -256,16 +272,9 @@ class WaypointManager(Node):
     def on_goal_pose(self, msg):
         """Handle a PoseStamped from Foxglove's 'Publish pose' arrow.
 
-        Extracts the map-frame x/y and feeds it through the same toLL
-        path as on_click.  The pose orientation is ignored — we only
-        use the position to add a waypoint.
+        Constructs a PointStamped and delegates to on_click (which will
+        automatically transform from whatever frame the pose arrived in to map).
         """
-        if msg.header.frame_id != 'map':
-            self.get_logger().warning(
-                f"Ignoring goal pose with frame '{msg.header.frame_id}'; expected 'map'",
-                throttle_duration_sec=5.0)
-            return
-        # Re-use on_click by constructing an equivalent PointStamped.
         point = PointStamped()
         point.header = msg.header
         point.point = msg.pose.position
