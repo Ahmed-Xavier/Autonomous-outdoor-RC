@@ -12,4 +12,5 @@ navsat_transform:
     zero_altitude: true
     publish_filtered_gps: true
     use_odometry_yaw: false
-    wait_for_datum: false
+    wait_for_datum: true
+    datum: [50.3568, 18.4027, 0.0]   # same lat/lon as the world's spherical_coordinates

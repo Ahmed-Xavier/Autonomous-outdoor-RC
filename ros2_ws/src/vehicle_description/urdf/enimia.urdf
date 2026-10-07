@@ -437,7 +437,6 @@
     - Imu: IMU sensor plugin
     - NavSat: GPS / NavSat sensor plugin
   -->
-
   <!--
     2-D LiDAR (RPLIDAR A1M8 approximation).
     360°, 10 Hz, 0.15–12 m, 1° resolution.
@@ -449,6 +448,7 @@
   <gazebo reference="lidar_link">
     <sensor name="lidar" type="gpu_lidar">
       <topic>/lidar_link/scan</topic>
+      <gz_frame_id>lidar_link</gz_frame_id>
       <update_rate>10</update_rate>
       <always_on>true</always_on>
       <visualize>false</visualize>
@@ -484,6 +484,7 @@
   <gazebo reference="imu_link">
     <sensor name="imu" type="imu">
       <topic>/imu_link/imu</topic>
+      <gz_frame_id>imu_link</gz_frame_id>
       <update_rate>100</update_rate>
       <always_on>true</always_on>
       <imu>
@@ -510,6 +511,7 @@
   <gazebo reference="gps_link">
     <sensor name="navsat" type="navsat">
       <topic>/gps_link/navsat</topic>
+      <gz_frame_id>gps_link</gz_frame_id>
       <update_rate>5</update_rate>
       <always_on>true</always_on>
     </sensor>

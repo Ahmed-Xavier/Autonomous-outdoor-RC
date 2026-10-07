@@ -1,0 +1,113 @@
+diff --git a/ros2_ws/src/localization/config/ekf_global.yaml b/ros2_ws/src/localization/config/ekf_global.yaml
+index ec7d4c7..d3115f8 100644
+--- a/ros2_ws/src/localization/config/ekf_global.yaml
++++ b/ros2_ws/src/localization/config/ekf_global.yaml
+@@ -2,7 +2,7 @@ ekf_map:
+   ros__parameters:
+     frequency: 10.0
+     two_d_mode: true
+-    publish_tf: true
++    publish_tf: false
+     map_frame: map
+     odom_frame: odom
+     base_link_frame: base_footprint   # CHANGED (was base_link), same reason
+diff --git a/ros2_ws/src/localization/config/ekf_local.yaml b/ros2_ws/src/localization/config/ekf_local.yaml
+index d68410b..674879a 100644
+--- a/ros2_ws/src/localization/config/ekf_local.yaml
++++ b/ros2_ws/src/localization/config/ekf_local.yaml
+@@ -2,7 +2,7 @@ ekf_odom:
+   ros__parameters:
+     frequency: 10.0
+     two_d_mode: true
+-    publish_tf: true
++    publish_tf: false
+     map_frame: map
+     odom_frame: odom
+     base_link_frame: base_footprint   # CHANGED (was base_link), only if it is the URDF root
+diff --git a/ros2_ws/src/localization/config/navsat.yaml b/ros2_ws/src/localization/config/navsat.yaml
+index 8a3dc1b..5450687 100644
+--- a/ros2_ws/src/localization/config/navsat.yaml
++++ b/ros2_ws/src/localization/config/navsat.yaml
+@@ -12,4 +12,5 @@ navsat_transform:
+     zero_altitude: true
+     publish_filtered_gps: true
+     use_odometry_yaw: false
+-    wait_for_datum: false
+\ No newline at end of file
++    wait_for_datum: true
++    datum: [50.3568, 18.4027, 0.0]
+\ No newline at end of file
+diff --git a/ros2_ws/src/simulation/launch/simulation.launch.py b/ros2_ws/src/simulation/launch/simulation.launch.py
+index 1670185..fd83a1e 100644
+--- a/ros2_ws/src/simulation/launch/simulation.launch.py
++++ b/ros2_ws/src/simulation/launch/simulation.launch.py
+@@ -61,7 +61,7 @@ def generate_launch_description():
+                     "-topic", "robot_description",
+                     "-name", "enimia",
+                     "-world", "silesia_ring",
+-                    "-z", "0.1",
++                    "-x", "-125.9", "-y", "-128.0", "-z", "0.1", "-Y", "-0.599",
+                 ],
+                 output="screen",
+             )
+diff --git a/ros2_ws/src/simulation/launch/simulation_gui.launch.py b/ros2_ws/src/simulation/launch/simulation_gui.launch.py
+index 80ed0b9..20d6683 100644
+--- a/ros2_ws/src/simulation/launch/simulation_gui.launch.py
++++ b/ros2_ws/src/simulation/launch/simulation_gui.launch.py
+@@ -56,7 +56,7 @@ def generate_launch_description():
+                     "-topic", "robot_description",
+                     "-name", "enimia",
+                     "-world", "silesia_ring",
+-                    "-z", "0.1",
++                    "-x", "-125.9", "-y", "-128.0", "-z", "0.1", "-Y", "-0.599",
+                 ],
+                 output="screen",
+             )
+diff --git a/ros2_ws/src/vehicle_description/urdf/enimia.urdf b/ros2_ws/src/vehicle_description/urdf/enimia.urdf
+index a5780e6..bf6bbe1 100644
+--- a/ros2_ws/src/vehicle_description/urdf/enimia.urdf
++++ b/ros2_ws/src/vehicle_description/urdf/enimia.urdf
+@@ -437,19 +437,6 @@
+     - Imu: IMU sensor plugin
+     - NavSat: GPS / NavSat sensor plugin
+   -->
+-  <gazebo>
+-    <plugin filename="gz-sim-sensors-system"
+-            name="gz::sim::systems::Sensors">
+-      <render_engine>ogre2</render_engine>
+-    </plugin>
+-    <plugin filename="gz-sim-imu-system"
+-            name="gz::sim::systems::Imu">
+-    </plugin>
+-    <plugin filename="gz-sim-navsat-system"
+-            name="gz::sim::systems::NavSat">
+-    </plugin>
+-  </gazebo>
+-
+   <!--
+     2-D LiDAR (RPLIDAR A1M8 approximation).
+     360°, 10 Hz, 0.15–12 m, 1° resolution.
+@@ -461,6 +448,7 @@
+   <gazebo reference="lidar_link">
+     <sensor name="lidar" type="gpu_lidar">
+       <topic>/lidar_link/scan</topic>
++      <gz_frame_id>lidar_link</gz_frame_id>
+       <update_rate>10</update_rate>
+       <always_on>true</always_on>
+       <visualize>false</visualize>
+@@ -496,6 +484,7 @@
+   <gazebo reference="imu_link">
+     <sensor name="imu" type="imu">
+       <topic>/imu_link/imu</topic>
++      <gz_frame_id>imu_link</gz_frame_id>
+       <update_rate>100</update_rate>
+       <always_on>true</always_on>
+       <imu>
+@@ -522,6 +511,7 @@
+   <gazebo reference="gps_link">
+     <sensor name="navsat" type="navsat">
+       <topic>/gps_link/navsat</topic>
++      <gz_frame_id>gps_link</gz_frame_id>
+       <update_rate>5</update_rate>
+       <always_on>true</always_on>
+     </sensor>
