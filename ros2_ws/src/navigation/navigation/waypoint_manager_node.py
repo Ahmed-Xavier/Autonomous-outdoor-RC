@@ -1,8 +1,8 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 import math
 
 import rclpy
-from geometry_msgs.msg import Point, PointStamped, Twist
+from geometry_msgs.msg import Point, PointStamped, PoseStamped, Twist
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from robot_localization.srv import FromLL, ToLL
@@ -27,6 +27,9 @@ class WaypointManager(Node):
             'waypoint_marker_scale': 0.35, 'target_marker_scale': 0.55,
             'text_height': 0.5, 'line_width': 0.08,
             'guidance_topic': '/waypoints/guidance',
+            # Foxglove "Publish pose" button topic (3D panel → toolbar → arrow icon).
+            # Set to '' to disable.
+            'goal_pose_topic': '/goal_pose',
         }
         for name, value in defaults.items():
             self.declare_parameter(name, value)
@@ -62,7 +65,12 @@ class WaypointManager(Node):
 
         self.create_subscription(NavSatFix, '/fix', self.on_fix, 10)
         self.create_subscription(Odometry, '/odometry/global', self.on_odom, 10)
+        # /clicked_point  — Foxglove 3D panel → "Publish clicked location" (crosshair icon)
         self.create_subscription(PointStamped, '/clicked_point', self.on_click, 10)
+        # /goal_pose      — Foxglove 3D panel → "Publish pose" (arrow icon); same logic
+        goal_topic = self.p('goal_pose_topic')
+        if goal_topic:
+            self.create_subscription(PoseStamped, goal_topic, self.on_goal_pose, 10)
         self.create_service(Trigger, '/waypoints/add_here', self.add_here)
         self.create_service(Trigger, '/waypoints/start', self.start)
         self.create_service(Trigger, '/waypoints/clear', self.clear)
@@ -244,6 +252,24 @@ class WaypointManager(Node):
             return
         ll = response.ll_point
         self.append_waypoint(ll.latitude, ll.longitude, (x, y))
+
+    def on_goal_pose(self, msg):
+        """Handle a PoseStamped from Foxglove's 'Publish pose' arrow.
+
+        Extracts the map-frame x/y and feeds it through the same toLL
+        path as on_click.  The pose orientation is ignored — we only
+        use the position to add a waypoint.
+        """
+        if msg.header.frame_id != 'map':
+            self.get_logger().warning(
+                f"Ignoring goal pose with frame '{msg.header.frame_id}'; expected 'map'",
+                throttle_duration_sec=5.0)
+            return
+        # Re-use on_click by constructing an equivalent PointStamped.
+        point = PointStamped()
+        point.header = msg.header
+        point.point = msg.pose.position
+        self.on_click(point)
 
     def request_from_ll(self):
         if self.pending_from_ll_index is not None or not self.waypoints:

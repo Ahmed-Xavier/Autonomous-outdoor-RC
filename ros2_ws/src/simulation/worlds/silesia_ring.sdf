@@ -7,6 +7,20 @@
       <real_time_update_rate>1000</real_time_update_rate>
     </physics>
 
+    <!--
+      Spherical coordinates origin: Kamień Śląski / Silesia Ring circuit.
+      lat=50.3568 N, lon=18.4027 E, elevation ~270 m.
+      heading_deg=0 means Gazebo +X aligns with geographic East (ENU standard).
+      navsat_transform must use yaw_offset=0 and zero_altitude=true to match.
+    -->
+    <spherical_coordinates>
+      <surface_model>EARTH_WGS84</surface_model>
+      <latitude_deg>50.3568</latitude_deg>
+      <longitude_deg>18.4027</longitude_deg>
+      <elevation>270.0</elevation>
+      <heading_deg>0</heading_deg>
+    </spherical_coordinates>
+
     <scene>
       <ambient>0.5 0.5 0.5 1</ambient>
       <background>0.65 0.65 0.65 1</background>
@@ -25,5 +39,82 @@
       <name>silesia_ring</name>
       <pose>0 0 0 0 0 0</pose>
     </include>
+
+    <!--
+      Cone obstacles (orange, r=0.15 m, h=0.5 m) placed along a
+      straight section for LiDAR avoidance testing.
+      Box obstacle simulates a stopped vehicle or barrier.
+    -->
+    <model name="cone_1">
+      <static>true</static>
+      <pose>10 2.0 0.25 0 0 0</pose>
+      <link name="link">
+        <collision name="col">
+          <geometry><cylinder><radius>0.15</radius><length>0.5</length></cylinder></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><cylinder><radius>0.15</radius><length>0.5</length></cylinder></geometry>
+          <material><ambient>1 0.4 0 1</ambient><diffuse>1 0.4 0 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="cone_2">
+      <static>true</static>
+      <pose>15 -1.5 0.25 0 0 0</pose>
+      <link name="link">
+        <collision name="col">
+          <geometry><cylinder><radius>0.15</radius><length>0.5</length></cylinder></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><cylinder><radius>0.15</radius><length>0.5</length></cylinder></geometry>
+          <material><ambient>1 0.4 0 1</ambient><diffuse>1 0.4 0 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="cone_3">
+      <static>true</static>
+      <pose>25 3.0 0.25 0 0 0</pose>
+      <link name="link">
+        <collision name="col">
+          <geometry><cylinder><radius>0.15</radius><length>0.5</length></cylinder></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><cylinder><radius>0.15</radius><length>0.5</length></cylinder></geometry>
+          <material><ambient>1 0.4 0 1</ambient><diffuse>1 0.4 0 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="cone_4">
+      <static>true</static>
+      <pose>30 -2.5 0.25 0 0 0</pose>
+      <link name="link">
+        <collision name="col">
+          <geometry><cylinder><radius>0.15</radius><length>0.5</length></cylinder></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><cylinder><radius>0.15</radius><length>0.5</length></cylinder></geometry>
+          <material><ambient>1 0.4 0 1</ambient><diffuse>1 0.4 0 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Box obstacle: simulates a stopped car or barrier -->
+    <model name="box_obstacle_1">
+      <static>true</static>
+      <pose>20 0.5 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="col">
+          <geometry><box><size>0.6 0.6 1.0</size></box></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><box><size>0.6 0.6 1.0</size></box></geometry>
+          <material><ambient>0.8 0.1 0.1 1</ambient><diffuse>0.8 0.1 0.1 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
   </world>
 </sdf>

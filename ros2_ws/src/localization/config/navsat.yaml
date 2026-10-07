@@ -2,8 +2,13 @@ navsat_transform:
   ros__parameters:
     frequency: 30.0
     delay: 3.0
-    magnetic_declination_radians: 0.0   # TODO: set for Tunisia (about +3 deg east, check a declination calculator)
-    yaw_offset: 0.0                     # 0 because the IMU yaw is ENU (east = 0)
+    # Kamień Śląski / Silesia Ring, Poland.
+    # Declination ≈ +3.5° E = +0.061 rad (check NOAA calculator for exact date).
+    magnetic_declination_radians: 0.061
+    # 0 because both the real BNO055 and the Gazebo IMU report yaw in ENU
+    # (east = 0, counter-clockwise positive), which is what navsat_transform
+    # expects by default.
+    yaw_offset: 0.0
     zero_altitude: true
     publish_filtered_gps: true
     use_odometry_yaw: false

@@ -430,4 +430,93 @@
     </plugin>
   </gazebo>
 
+  <!-- ===================== Gazebo Sensors ===================== -->
+  <!--
+    Load the Sensors system so the GPU lidar, IMU and NavSat sensor plugins
+    are processed by Gazebo. ogre2 is the default render engine for Harmonic.
+  -->
+  <gazebo>
+    <plugin filename="gz-sim-sensors-system"
+            name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+  </gazebo>
+
+  <!--
+    2-D LiDAR (RPLIDAR A1M8 approximation).
+    360°, 10 Hz, 0.15–12 m, 1° resolution.
+    Topic: /lidar_link/scan  (bridged to /scan in simulation.launch.py).
+    The joint has rpy="0 0.07 0" (+4° pitch) so the scan plane is slightly
+    tilted — this matches the physical mount. The bridge delivers a flat
+    LaserScan; the tilt is negligible for 2D obstacle detection.
+  -->
+  <gazebo reference="lidar_link">
+    <sensor name="lidar" type="gpu_lidar">
+      <topic>/lidar_link/scan</topic>
+      <update_rate>10</update_rate>
+      <always_on>true</always_on>
+      <visualize>false</visualize>
+      <lidar>
+        <scan>
+          <horizontal>
+            <samples>360</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14159265</min_angle>
+            <max_angle>3.14159265</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.15</min>
+          <max>12.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise type="gaussian">
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </lidar>
+    </sensor>
+  </gazebo>
+
+  <!--
+    IMU (BNO055 approximation).
+    100 Hz, small Gaussian noise on gyro and accel.
+    Topic: /imu_link/imu  (bridged to /imu/data in simulation.launch.py).
+    imu_link axes are aligned with base_link (rpy=0) so no additional
+    rotation is needed in ekf_local.yaml / ekf_global.yaml.
+  -->
+  <gazebo reference="imu_link">
+    <sensor name="imu" type="imu">
+      <topic>/imu_link/imu</topic>
+      <update_rate>100</update_rate>
+      <always_on>true</always_on>
+      <imu>
+        <angular_velocity>
+          <x><noise type="gaussian"><mean>0</mean><stddev>0.001</stddev></noise></x>
+          <y><noise type="gaussian"><mean>0</mean><stddev>0.001</stddev></noise></y>
+          <z><noise type="gaussian"><mean>0</mean><stddev>0.001</stddev></noise></z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x><noise type="gaussian"><mean>0</mean><stddev>0.01</stddev></noise></x>
+          <y><noise type="gaussian"><mean>0</mean><stddev>0.01</stddev></noise></y>
+          <z><noise type="gaussian"><mean>0</mean><stddev>0.01</stddev></noise></z>
+        </linear_acceleration>
+      </imu>
+    </sensor>
+  </gazebo>
+
+  <!--
+    GPS/GNSS (GT-U7 approximation).
+    5 Hz. The world's <spherical_coordinates> block sets the origin at
+    Kamień Śląski so fixes land at the correct lat/lon.
+    Topic: /gps_link/navsat  (bridged to /fix in simulation.launch.py).
+  -->
+  <gazebo reference="gps_link">
+    <sensor name="navsat" type="navsat">
+      <topic>/gps_link/navsat</topic>
+      <update_rate>5</update_rate>
+      <always_on>true</always_on>
+    </sensor>
+  </gazebo>
+
 </robot>

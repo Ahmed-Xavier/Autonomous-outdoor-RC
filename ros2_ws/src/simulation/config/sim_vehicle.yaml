@@ -1,0 +1,46 @@
+# Simulation-specific parameter overrides for the ENIMIA vehicle.
+#
+# The real RC car configs (local_planner.yaml, cmd_vel_gate.yaml,
+# safety_stop.yaml) are sized for a 0.30 m chassis with 0.185 m wheelbase.
+# The ENIMIA URDF is:
+#   wheelbase      = 1.704 m  (rear wheel centre to front axle)
+#   track (front)  = 0.567 m
+#   max steer      = ±0.21 rad → min turn radius ≈ 8.1 m
+#   front bumper   ≈ +0.945 m from base_link (front axle at +0.852 + overhang)
+#   rear bumper    ≈ −0.980 m from base_link
+#   half-width     ≈ 0.385 m  (track/2 + tyre width 0.035 m)
+#
+# Load this file *after* the real config in any simulation launch so these
+# values shadow the RC-car defaults.
+
+local_planner:
+  ros__parameters:
+    wheelbase: 1.704
+    # Increase planning horizon to suit the larger vehicle and wider turns.
+    horizon_m: 10.0
+    # Keep 11 arcs; they now span ±0.21 rad (steer limit) instead of ±0.9.
+    num_arcs: 11
+    # Generous margin — cone radius 0.15 m + body half-width 0.385 m.
+    safety_margin_m: 0.40
+
+cmd_vel_gate:
+  ros__parameters:
+    # ENIMIA body extents in base_link frame (front axle = origin).
+    # front overhang: 0.852 (axle to front visual) + ~0.093 m bumper = 0.945 m
+    # rear:  wheelbase + rear overhang (0.852 + 0.128) from front axle = -0.980 m
+    front_x:   0.945
+    rear_x:   -0.980
+    half_width: 0.385
+    # Stop well clear — 1.5 m gives time to brake at sim speeds.
+    stop_distance_m: 1.5
+
+safety_stop:
+  ros__parameters:
+    # Lidar-to-front-bumper distance ≈ 0.093 m (lidar at x=0.120 on mount,
+    # mount at x=0.050 relative to base_link; front bumper at 0.945 m).
+    front_offset_m: 0.775
+    # Stop before obstacles; clear_distance gives hysteresis.
+    stop_distance_m: 1.2
+    clear_distance_m: 1.8
+    # Full sweep ±30° for a vehicle this wide.
+    half_angle_deg: 30.0

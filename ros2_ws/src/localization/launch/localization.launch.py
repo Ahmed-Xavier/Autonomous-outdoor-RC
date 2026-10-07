@@ -1,7 +1,7 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 import os
@@ -13,9 +13,11 @@ def generate_launch_description():
     global_cfg = os.path.join(share, 'config', 'ekf_global.yaml')
     navsat_cfg = os.path.join(share, 'config', 'navsat.yaml')
     use_gps = LaunchConfiguration('use_gps')
+    use_sim_time = LaunchConfiguration('use_sim_time')
 
     return LaunchDescription([
         DeclareLaunchArgument('use_gps', default_value='true'),
+        DeclareLaunchArgument('use_sim_time', default_value='false'),
 
         Node(
             package='localization',
@@ -23,20 +25,24 @@ def generate_launch_description():
             name='imu_stamper',
             prefix='python3',
             output='screen',
+            parameters=[{'use_sim_time': PythonExpression(
+                ["'", use_sim_time, "' == 'true'"])}],
         ),
 
         Node(
             package='robot_localization',
             executable='ekf_node',
             name='ekf_odom',
-            parameters=[local_cfg],
+            parameters=[local_cfg, {'use_sim_time': PythonExpression(
+                ["'", use_sim_time, "' == 'true'"])}],
             remappings=[('odometry/filtered', 'odometry/local')],
         ),
         Node(
             package='robot_localization',
             executable='ekf_node',
             name='ekf_map',
-            parameters=[global_cfg],
+            parameters=[global_cfg, {'use_sim_time': PythonExpression(
+                ["'", use_sim_time, "' == 'true'"])}],
             remappings=[('odometry/filtered', 'odometry/global')],
             condition=IfCondition(use_gps),
         ),
@@ -44,7 +50,8 @@ def generate_launch_description():
             package='robot_localization',
             executable='navsat_transform_node',
             name='navsat_transform',
-            parameters=[navsat_cfg],
+            parameters=[navsat_cfg, {'use_sim_time': PythonExpression(
+                ["'", use_sim_time, "' == 'true'"])}],
             condition=IfCondition(use_gps),
             remappings=[
                 ('imu', '/imu/data'),
