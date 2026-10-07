@@ -437,18 +437,6 @@
     - Imu: IMU sensor plugin
     - NavSat: GPS / NavSat sensor plugin
   -->
-  <gazebo>
-    <plugin filename="gz-sim-sensors-system"
-            name="gz::sim::systems::Sensors">
-      <render_engine>ogre2</render_engine>
-    </plugin>
-    <plugin filename="gz-sim-imu-system"
-            name="gz::sim::systems::Imu">
-    </plugin>
-    <plugin filename="gz-sim-navsat-system"
-            name="gz::sim::systems::NavSat">
-    </plugin>
-  </gazebo>
 
   <!--
     2-D LiDAR (RPLIDAR A1M8 approximation).
