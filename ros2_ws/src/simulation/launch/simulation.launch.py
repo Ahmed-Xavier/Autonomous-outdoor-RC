@@ -60,8 +60,8 @@ def generate_launch_description():
                 arguments=[
                     "-topic", "robot_description",
                     "-name", "enimia",
-                    "-world", "silesia_ring",
-                    "-z", "0.1",
+                     "-world", "silesia_ring",
+                      "-z", "0.1",
                 ],
                 output="screen",
             )

@@ -19,26 +19,6 @@
           </box>
         </geometry>
       </collision>
-      <visual name="track_boundaries">
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <uri>model://silesia_ring/meshes/track_boundaries.obj</uri>
-          </mesh>
-        </geometry>
-        <material>
-          <ambient>0.25 0.25 0.25 1</ambient>
-          <diffuse>0.25 0.25 0.25 1</diffuse>
-        </material>
-      </visual>
-      <collision name="track_boundaries_collision">
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <uri>model://silesia_ring/meshes/track_boundaries.obj</uri>
-          </mesh>
-        </geometry>
-      </collision>
     </link>
   </model>
 </sdf>

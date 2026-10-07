@@ -45,13 +45,6 @@ class WorldMarkers(Node):
         # Ground: Foxglove already rotates it, so no extra rotation.
         arr.markers.append(self._mesh(0, 'ground', GROUND))
 
-        # Boundaries: Z-up file, so cancel the rotation (-90 deg about X).
-        gray = (0.25, 0.25, 0.25, 1.0)
-        bounds = self._mesh(1, 'boundaries', BOUNDS, gray)
-        bounds.pose.orientation.x = -0.7071068
-        bounds.pose.orientation.w = 0.7071068
-        arr.markers.append(bounds)
-
         self.pub.publish(arr)
 
 
