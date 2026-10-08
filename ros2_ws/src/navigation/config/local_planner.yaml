@@ -1,8 +1,8 @@
 local_planner:
   ros__parameters:
-    horizon_m: 1.0
+    horizon_m: 2.0
     num_arcs: 11
-    safety_margin_m: 0.05
+    safety_margin_m: 0.85
     w_smooth: 0.2
     left_turn_sign: 1.0
     # vehicle_description/urdf/rc_car.urdf.xacro wheel_base property.

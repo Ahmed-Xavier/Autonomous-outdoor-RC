@@ -1,0 +1,145 @@
+diff --git a/ros2_ws/src/simulation/launch/simulation.launch.py b/ros2_ws/src/simulation/launch/simulation.launch.py
+index cc519a7..ac76243 100644
+--- a/ros2_ws/src/simulation/launch/simulation.launch.py
++++ b/ros2_ws/src/simulation/launch/simulation.launch.py
+@@ -143,7 +143,7 @@ def generate_launch_description():
+     world_markers = Node(
+         package="simulation",
+         executable="world_markers.py",
+-        parameters=[{"frame_id": "map", "use_sim_time": True}],
++        parameters=[{"frame_id": "map", "world_file": world, "use_sim_time": True}],
+         output="screen",
+     )
+ 
+diff --git a/ros2_ws/src/simulation/scripts/world_markers.py b/ros2_ws/src/simulation/scripts/world_markers.py
+index c0637e8..92016ae 100755
+--- a/ros2_ws/src/simulation/scripts/world_markers.py
++++ b/ros2_ws/src/simulation/scripts/world_markers.py
+@@ -1,5 +1,8 @@
+ #!/usr/bin/env python3
+ """Publish the Silesia Ring world as RViz/Foxglove markers."""
++import math
++import xml.etree.ElementTree as ET
++
+ import rclpy
+ from rclpy.node import Node
+ from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy
+@@ -11,16 +14,73 @@ GROUND = MESH_DIR + 'silesia_ring.glb'
+ BOUNDS = MESH_DIR + 'track_boundaries.obj'
+ 
+ 
++def _floats(text, n):
++    vals = [float(v) for v in (text or '').split()]
++    return (vals + [0.0] * n)[:n]
++
++
++def load_obstacles(world_file):
++    """Read static primitive models (cylinder/box/sphere) from a Gazebo world SDF.
++
++    Returns dicts: name, kind, pose (x, y, z, yaw), size (x, y, z), rgba.
++    Models with mesh geometry (e.g. the track) and <include> tags are skipped.
++    Link/visual pose offsets and roll/pitch are ignored.
++    """
++    world = ET.parse(world_file).getroot().find('world')
++    out = []
++    for model in world.findall('model'):
++        name = model.get('name')
++        if name == 'ground_plane':
++            continue
++        x, y, z, _r, _p, yaw = _floats(model.findtext('pose'), 6)
++        for visual in model.iter('visual'):
++            geom = visual.find('geometry')
++            if geom is None:
++                continue
++            if geom.find('cylinder') is not None:
++                c = geom.find('cylinder')
++                d = 2.0 * float(c.findtext('radius'))
++                kind, size = 'cylinder', (d, d, float(c.findtext('length')))
++            elif geom.find('box') is not None:
++                kind = 'box'
++                size = tuple(_floats(geom.find('box').findtext('size'), 3))
++            elif geom.find('sphere') is not None:
++                d = 2.0 * float(geom.find('sphere').findtext('radius'))
++                kind, size = 'sphere', (d, d, d)
++            else:
++                continue
++            rgba = _floats(visual.findtext('material/diffuse'), 4)
++            if rgba[3] == 0.0:
++                rgba = [0.6, 0.6, 0.6, 1.0]
++            out.append({'name': name, 'kind': kind, 'pose': (x, y, z, yaw),
++                        'size': size, 'rgba': rgba})
++            break  # one marker per model
++    return out
++
++
+ class WorldMarkers(Node):
+     def __init__(self):
+         super().__init__('world_markers')
+         self.declare_parameter('frame_id', 'map')
++        self.declare_parameter('world_file', '')
++        self.obstacles = []
++        world_file = self.get_parameter('world_file').value
++        if world_file:
++            try:
++                self.obstacles = load_obstacles(world_file)
++                self.get_logger().info(
++                    f'Loaded {len(self.obstacles)} obstacle(s) from {world_file}')
++            except Exception as exc:
++                self.get_logger().error(f'Could not read obstacles from {world_file}: {exc}')
++        else:
++            self.get_logger().warning('world_file not set; no obstacle markers')
+         qos = QoSProfile(
+             depth=1,
+             durability=DurabilityPolicy.TRANSIENT_LOCAL,
+             reliability=ReliabilityPolicy.RELIABLE,
+         )
+         self.pub = self.create_publisher(MarkerArray, '/world_markers', qos)
++        self.obstacle_pub = self.create_publisher(MarkerArray, '/world_obstacles', qos)
+         self.timer = self.create_timer(1.0, self.publish)
+         self.publish()
+ 
+@@ -39,6 +99,36 @@ class WorldMarkers(Node):
+             m.color.r, m.color.g, m.color.b, m.color.a = rgba
+         return m
+ 
++    def _obstacle_markers(self):
++        arr = MarkerArray()
++        frame = self.get_parameter('frame_id').value
++        kinds = {'cylinder': Marker.CYLINDER, 'box': Marker.CUBE, 'sphere': Marker.SPHERE}
++        for i, o in enumerate(self.obstacles):
++            x, y, z, yaw = o['pose']
++            m = Marker()
++            m.header.frame_id = frame
++            m.ns, m.id = 'obstacles', i
++            m.type, m.action = kinds[o['kind']], Marker.ADD
++            m.pose.position.x, m.pose.position.y, m.pose.position.z = x, y, z
++            m.pose.orientation.z = math.sin(yaw / 2.0)
++            m.pose.orientation.w = math.cos(yaw / 2.0)
++            m.scale.x, m.scale.y, m.scale.z = o['size']
++            m.color.r, m.color.g, m.color.b, m.color.a = o['rgba']
++            arr.markers.append(m)
++
++            label = Marker()
++            label.header.frame_id = frame
++            label.ns, label.id = 'obstacle_labels', i
++            label.type, label.action = Marker.TEXT_VIEW_FACING, Marker.ADD
++            label.pose.position.x, label.pose.position.y = x, y
++            label.pose.position.z = z + o['size'][2] / 2.0 + 0.3
++            label.pose.orientation.w = 1.0
++            label.scale.z = 0.4
++            label.color.r = label.color.g = label.color.b = label.color.a = 1.0
++            label.text = o['name']
++            arr.markers.append(label)
++        return arr
++
+     def publish(self):
+         arr = MarkerArray()
+ 
+@@ -46,6 +136,7 @@ class WorldMarkers(Node):
+         arr.markers.append(self._mesh(0, 'ground', GROUND))
+ 
+         self.pub.publish(arr)
++        self.obstacle_pub.publish(self._obstacle_markers())
+ 
+ 
+ def main():
