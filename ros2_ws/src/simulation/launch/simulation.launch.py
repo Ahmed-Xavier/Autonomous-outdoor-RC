@@ -2,20 +2,26 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, TimerAction, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction, TimerAction, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
+from launch.substitutions import LaunchConfiguration
 
 
 def generate_launch_description():
+    return LaunchDescription([DeclareLaunchArgument('world', default_value='silesia_ring', choices=['silesia_ring', 'autonomous_challenge']), OpaqueFunction(function=launch_setup)])
+
+
+def launch_setup(context):
+    world_name = LaunchConfiguration('world').perform(context)
     sim_share = get_package_share_directory("simulation")
     desc_share = get_package_share_directory("vehicle_description")
     nav_share = get_package_share_directory("navigation")
     loc_share = get_package_share_directory("localization")
     ctrl_share = get_package_share_directory("vehicle_control")
 
-    # Silesia Ring world
-    world = os.path.join(sim_share, "worlds", "silesia_ring.sdf")
+    # Select full circuit or lightweight challenge test course.
+    world = os.path.join(sim_share, "worlds", f"{world_name}.sdf")
 
     # sim_vehicle.yaml overrides the RC-car footprint/wheelbase with ENIMIA dims
     sim_vehicle_cfg = os.path.join(sim_share, "config", "sim_vehicle.yaml")
@@ -28,6 +34,7 @@ def generate_launch_description():
         os.pathsep.join([
             os.path.dirname(desc_share),
             os.path.join(sim_share, "worlds", "models"),
+            os.environ.get("GZ_SIM_RESOURCE_PATH", ""),
         ])
     )
 
@@ -94,7 +101,7 @@ def generate_launch_description():
             # Core / clock
             "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
             # Joint states (for URDF animation in Foxglove)
-            "/world/silesia_ring/model/enimia/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model",
+            f"/world/{world_name}/model/enimia/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model",
             # Ground-truth odometry and TF (map → base_footprint) from Gazebo
             "/enimia/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry",
             "/enimia/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V",
@@ -111,7 +118,7 @@ def generate_launch_description():
             "/gps_link/navsat@sensor_msgs/msg/NavSatFix[gz.msgs.NavSat",
             # ── Remaps ─────────────────────────────────────────────────
             "--ros-args",
-            "-r", "/world/silesia_ring/model/enimia/joint_state:=/joint_states",
+            "-r", f"/world/{world_name}/model/enimia/joint_state:=/joint_states",
             "-r", "/enimia/odom:=/odom",
             "-r", "/enimia/tf:=/tf",
             "-r", "/lidar_link/scan:=/scan",
@@ -143,7 +150,7 @@ def generate_launch_description():
     world_markers = Node(
         package="simulation",
         executable="world_markers.py",
-        parameters=[{"frame_id": "map", "use_sim_time": True}],
+        parameters=[{"frame_id": "map", "world": world_name, "use_sim_time": True}],
         output="screen",
     )
 
@@ -251,7 +258,7 @@ def generate_launch_description():
         output="screen",
     )
 
-    return LaunchDescription([
+    return [
         resource_path,
         description,
         gazebo,
@@ -267,4 +274,4 @@ def generate_launch_description():
         local_planner,
         cmd_vel_gate,
         safety_stop,
-    ])
+    ]
