@@ -1,6 +1,7 @@
 <?xml version="1.0" ?>
 <sdf version="1.9">
   <world name="silesia_ring">
+    <!-- Approximate track ribbon scaled to 3,636 m centreline and 12 m nominal width; layout is not survey-grade. -->
     <physics name="1ms" type="ode">
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1</real_time_factor>
@@ -48,6 +49,22 @@
       <diffuse>1 1 1 1</diffuse>
       <specular>0.2 0.2 0.2 1</specular>
     </light>
+
+
+    <!-- Flat surrounding terrain, 1 cm below the track ribbon. The track itself has matching mesh collision. -->
+    <model name="silesia_ring_terrain">
+      <static>true</static>
+      <pose>0 0 -0.06 0 0 0</pose>
+      <link name="ground">
+        <collision name="ground_collision">
+          <geometry><box><size>2000 2000 0.1</size></box></geometry>
+        </collision>
+        <visual name="ground_visual">
+          <geometry><box><size>2000 2000 0.1</size></box></geometry>
+          <material><ambient>0.18 0.24 0.16 1</ambient><diffuse>0.18 0.24 0.16 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
 
     <include>
       <uri>model://silesia_ring</uri>
