@@ -9,6 +9,7 @@ from ament_index_python.packages import get_package_share_directory
 from nav_msgs.msg import Odometry
 import rclpy
 from rclpy.node import Node
+from rclpy.parameter import Parameter
 from std_msgs.msg import Float32
 
 from dashboard_bridge.render import fit_track, render
@@ -17,10 +18,18 @@ from dashboard_bridge.render import fit_track, render
 class DashboardServer(Node):
     def __init__(self):
         super().__init__('dashboard_server')
-        for parameter in ('track_path', 'port', 'rotate', 'speed_max',
-                          'stale_timeout_s', 'track_smoothing_sigma',
-                          'supersample_factor', 'map_box'):
-            self.declare_parameter(parameter)
+        parameter_types = {
+            'track_path': Parameter.Type.STRING,
+            'port': Parameter.Type.INTEGER,
+            'rotate': Parameter.Type.INTEGER,
+            'speed_max': Parameter.Type.DOUBLE,
+            'stale_timeout_s': Parameter.Type.DOUBLE,
+            'track_smoothing_sigma': Parameter.Type.DOUBLE,
+            'supersample_factor': Parameter.Type.INTEGER,
+            'map_box': Parameter.Type.INTEGER_ARRAY,
+        }
+        for parameter, parameter_type in parameter_types.items():
+            self.declare_parameter(parameter, parameter_type)
 
         track_path = self.get_parameter('track_path').value
         if not os.path.isabs(track_path):
