@@ -8,7 +8,7 @@ Run `ros2 launch simulation simulation.launch.py world:=silesia_ring`.
 ## Autonomous challenge test course
 Run `ros2 launch simulation simulation.launch.py world:=autonomous_challenge`.
 
-Loads a lightweight 60 x 30 m rectangular loop with 6 m roadway, yellow start/finish line, orange stop line, stop-sign target and static obstacle replicas. Vehicle spawn: (-5, -15), heading +X.
+Loads a lightweight 60 x 30 m rectangular loop with 6 m roadway, yellow start/finish line, orange stop line, stop-sign target and static obstacle replicas. Vehicle spawn: (-15, -15), heading +X, behind the start/finish line.
 
 **This is an engineering test fixture, not an official Shell Eco-marathon course map.** Replace geometry when the organisers publish the applicable course.
 
