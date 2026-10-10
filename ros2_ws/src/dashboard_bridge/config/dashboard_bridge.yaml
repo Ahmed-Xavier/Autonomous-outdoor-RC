@@ -1,0 +1,14 @@
+/**:
+  ros__parameters:
+    track_path: track.json
+    pixel_center_x: 300.0
+    pixel_center_y: 300.0
+    meters_per_pixel: 1.4321
+    track_search_window: 20
+    odometry_topic: /odometry/global
+    status_odometry_topic: /odom
+    battery_initial_percent: 100.0
+    battery_drop_percent_per_meter: 0.02
+    ambient_temperature_c: 25.0
+    temperature_rise_c_per_mps: 2.0
+    publish_rate_hz: 2.0
