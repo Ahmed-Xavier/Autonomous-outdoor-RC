@@ -21,6 +21,7 @@ setup(
         'console_scripts': [
             'track_progress = dashboard_bridge.track_progress:main',
             'fake_vehicle_status = dashboard_bridge.fake_vehicle_status:main',
+            'dashboard_server = dashboard_bridge.dashboard_server:main',
         ],
     },
 )

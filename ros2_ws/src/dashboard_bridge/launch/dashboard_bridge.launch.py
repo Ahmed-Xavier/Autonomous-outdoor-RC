@@ -16,4 +16,6 @@ def generate_launch_description():
              name='track_progress', parameters=[config, {'use_sim_time': use_sim_time}]),
         Node(package='dashboard_bridge', executable='fake_vehicle_status',
              name='fake_vehicle_status', parameters=[config, {'use_sim_time': use_sim_time}]),
+        Node(package='dashboard_bridge', executable='dashboard_server',
+             name='dashboard_server', parameters=[config, {'use_sim_time': use_sim_time}]),
     ])
