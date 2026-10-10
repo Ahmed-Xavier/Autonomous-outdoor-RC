@@ -67,7 +67,9 @@ def launch_setup(context):
                 arguments=[
                     "-topic", "robot_description",
                     "-name", "enimia",
-                     "-world", "silesia_ring",
+                     "-world", world_name,
+                    "-x", "-5" if world_name == "autonomous_challenge" else "0",
+                    "-y", "-15" if world_name == "autonomous_challenge" else "0",
                       "-z", "0.1",
                 ],
                 output="screen",
